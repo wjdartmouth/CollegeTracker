@@ -122,6 +122,18 @@ struct RolePill: View {
 
 struct MainTabView: View {
     let profile: UserProfile
+
+    var body: some View {
+        if profile.role == .counselor {
+            CounselorTabView(counselor: profile)
+        } else {
+            StudentTabView(profile: profile)
+        }
+    }
+}
+
+struct StudentTabView: View {
+    let profile: UserProfile
     @State private var selectedTab = 0
 
     var body: some View {
@@ -141,6 +153,23 @@ struct MainTabView: View {
             ProgressDashboardView(profile: profile)
                 .tabItem { Label("Progress", systemImage: "chart.pie.fill") }
                 .tag(3)
+        }
+    }
+}
+
+struct CounselorTabView: View {
+    let counselor: UserProfile
+    @State private var selectedTab = 0
+
+    var body: some View {
+        TabView(selection: $selectedTab) {
+            CounselorDashboardView(counselor: counselor)
+                .tabItem { Label("Students", systemImage: "person.2.fill") }
+                .tag(0)
+
+            CounselorOverviewView(counselor: counselor)
+                .tabItem { Label("Overview", systemImage: "chart.pie.fill") }
+                .tag(1)
         }
     }
 }
