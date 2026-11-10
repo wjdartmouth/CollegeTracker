@@ -14,7 +14,13 @@ struct CollegeListView: View {
     var filteredColleges: [College] {
         var result = profile.colleges
         if !searchText.isEmpty {
-            result = result.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+            result = result.filter {
+                $0.name.localizedCaseInsensitiveContains(searchText)
+                    || ($0.localNativeName?.localizedCaseInsensitiveContains(searchText) ?? false)
+                    || ($0.city?.localizedCaseInsensitiveContains(searchText) ?? false)
+                    || ($0.countryRegion?.localizedCaseInsensitiveContains(searchText) ?? false)
+                    || ($0.catalogId?.localizedCaseInsensitiveContains(searchText) ?? false)
+            }
         }
         if let status = selectedStatus {
             result = result.filter { $0.status == status }
@@ -179,6 +185,10 @@ struct AddCollegeView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
 
+    private enum Phase { case pick, details }
+
+    @State private var phase: Phase = .pick
+    @State private var selectedCatalog: CatalogCollege?
     @State private var name = ""
     @State private var status: ApplicationStatus = .researching
     @State private var acceptanceRate = ""
@@ -191,75 +201,169 @@ struct AddCollegeView: View {
     @State private var deadlineType: DeadlineType = .regularDecision
     @State private var deadlineDate = Calendar.current.date(byAdding: .month, value: 3, to: .now) ?? .now
 
+    private var alreadyAddedCatalogIDs: Set<String> {
+        Set(profile.colleges.compactMap(\.catalogId))
+    }
+
+    private var isDuplicate: Bool {
+        if let id = selectedCatalog?.id {
+            return alreadyAddedCatalogIDs.contains(id)
+        }
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        return profile.colleges.contains { $0.name.caseInsensitiveCompare(trimmed) == .orderedSame }
+    }
+
     var body: some View {
         NavigationStack {
-            Form {
-                Section("School Info") {
-                    TextField("College name", text: $name)
-                    Picker("Status", selection: $status) {
-                        ForEach(ApplicationStatus.allCases) { s in
-                            Label(s.rawValue, systemImage: s.icon).tag(s)
+            Group {
+                switch phase {
+                case .pick:
+                    CatalogCollegePicker(
+                        alreadyAddedCatalogIDs: alreadyAddedCatalogIDs,
+                        onSelect: { college in
+                            applyCatalog(college)
+                            phase = .details
+                        },
+                        onCustom: {
+                            selectedCatalog = nil
+                            name = ""
+                            portalURL = ""
+                            ranking = ""
+                            phase = .details
                         }
-                    }
-                }
-
-                Section("Details (optional)") {
-                    HStack {
-                        Text("Acceptance Rate")
-                        Spacer()
-                        TextField("e.g. 8.7", text: $acceptanceRate)
-                            .multilineTextAlignment(.trailing)
-                            .keyboardType(.decimalPad)
-                        Text("%").foregroundStyle(.secondary)
-                    }
-                    HStack {
-                        Text("US News Rank")
-                        Spacer()
-                        TextField("e.g. 3", text: $ranking)
-                            .multilineTextAlignment(.trailing)
-                            .keyboardType(.numberPad)
-                    }
-                    TextField("Application portal URL", text: $portalURL)
-                        .keyboardType(.URL)
-                        .textInputAutocapitalization(.never)
-                }
-
-                Section("First Deadline") {
-                    Toggle("Add a deadline", isOn: $addDeadline)
-                    if addDeadline {
-                        Picker("Type", selection: $deadlineType) {
-                            ForEach(DeadlineType.allCases) { t in
-                                Text(t.rawValue).tag(t)
-                            }
-                        }
-                        DatePicker("Date", selection: $deadlineDate, displayedComponents: .date)
-                    }
-                }
-
-                Section("Notes") {
-                    TextEditor(text: $notes)
-                        .frame(minHeight: 80)
+                    )
+                case .details:
+                    detailsForm
                 }
             }
-            .navigationTitle("Add College")
-            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Add") { save() }.disabled(name.isEmpty)
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                if phase == .details {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Back") {
+                            phase = .pick
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Add") { save() }
+                            .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isDuplicate)
+                    }
                 }
             }
         }
     }
 
+    private var detailsForm: some View {
+        Form {
+            Section("School Info") {
+                if let selectedCatalog {
+                    CatalogCollegeRow(college: selectedCatalog, alreadyAdded: isDuplicate)
+                    LabeledContent("Catalog ID", value: selectedCatalog.id)
+                    if !selectedCatalog.locationLine.isEmpty {
+                        LabeledContent("Location", value: selectedCatalog.locationLine)
+                    }
+                } else {
+                    TextField("College name", text: $name)
+                    Text("This school is not in the bundled HK + Japan catalog.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Picker("Status", selection: $status) {
+                    ForEach(ApplicationStatus.allCases) { s in
+                        Label(s.rawValue, systemImage: s.icon).tag(s)
+                    }
+                }
+            }
+
+            if isDuplicate {
+                Section {
+                    Text("This school is already on your list.")
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+            }
+
+            Section("Details (optional)") {
+                HStack {
+                    Text("Acceptance Rate")
+                    Spacer()
+                    TextField("e.g. 8.7", text: $acceptanceRate)
+                        .multilineTextAlignment(.trailing)
+                        .keyboardType(.decimalPad)
+                    Text("%").foregroundStyle(.secondary)
+                }
+                HStack {
+                    Text("QS Rank")
+                    Spacer()
+                    TextField("e.g. 17", text: $ranking)
+                        .multilineTextAlignment(.trailing)
+                        .keyboardType(.numberPad)
+                }
+                if let selectedCatalog, let qs = selectedCatalog.qsRankDisplay, Int(qs) == nil {
+                    Text("Catalog QS: \(qs)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                TextField("Application portal URL", text: $portalURL)
+                    .keyboardType(.URL)
+                    .textInputAutocapitalization(.never)
+            }
+
+            Section("First Deadline") {
+                Toggle("Add a deadline", isOn: $addDeadline)
+                if addDeadline {
+                    Picker("Type", selection: $deadlineType) {
+                        ForEach(DeadlineType.allCases) { t in
+                            Text(t.rawValue).tag(t)
+                        }
+                    }
+                    DatePicker("Date", selection: $deadlineDate, displayedComponents: .date)
+                }
+            }
+
+            Section("Notes") {
+                TextEditor(text: $notes)
+                    .frame(minHeight: 80)
+            }
+        }
+        .navigationTitle("Add College")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func applyCatalog(_ college: CatalogCollege) {
+        selectedCatalog = college
+        name = college.officialEnglishName
+        portalURL = college.website
+        ranking = college.numericQSRank.map(String.init) ?? ""
+    }
+
     private func save() {
-        let college = College(name: name.trimmingCharacters(in: .whitespaces))
+        let college = College(name: name.trimmingCharacters(in: .whitespacesAndNewlines))
         college.status = status
         college.acceptanceRate = Double(acceptanceRate)
         college.ranking = Int(ranking)
-        college.portalURL = portalURL.isEmpty ? nil : portalURL
+        college.portalURL = portalURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? nil : portalURL.trimmingCharacters(in: .whitespacesAndNewlines)
         college.notes = notes
         college.profile = profile
+
+        if let selected = selectedCatalog {
+            college.catalogId = selected.id
+            college.city = selected.city.isEmpty ? nil : selected.city
+            college.countryRegion = selected.countryRegion.isEmpty ? nil : selected.countryRegion
+            college.localNativeName = selected.localNativeName.isEmpty ? nil : selected.localNativeName
+            college.qsRankText = selected.qsRankDisplay
+            if college.ranking == nil {
+                college.ranking = selected.numericQSRank
+            }
+            if college.portalURL == nil, !selected.website.isEmpty {
+                college.portalURL = selected.website
+            }
+        }
 
         if addDeadline {
             let deadline = Deadline(type: deadlineType, date: deadlineDate)

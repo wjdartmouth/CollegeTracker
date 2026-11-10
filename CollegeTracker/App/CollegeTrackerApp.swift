@@ -20,7 +20,13 @@ struct CollegeTrackerApp: App {
         do {
             return try ModelContainer(for: schema, configurations: [config])
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            // CloudKit entitlements / container may be missing until Signing & Capabilities is set on a Mac.
+            let local = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+            do {
+                return try ModelContainer(for: schema, configurations: [local])
+            } catch {
+                fatalError("Could not create ModelContainer: \(error)")
+            }
         }
     }()
 

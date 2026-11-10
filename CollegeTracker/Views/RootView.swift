@@ -24,7 +24,6 @@ struct OnboardingView: View {
     @Environment(\.modelContext) private var context
     @State private var name = ""
     @State private var role: UserRole = .student
-    @State private var step = 0
 
     var body: some View {
         NavigationStack {
@@ -44,16 +43,15 @@ struct OnboardingView: View {
                         .multilineTextAlignment(.center)
                 }
 
-                // Role picker
+                // Role picker — counselor tools are deferred (no fake iCloud sharing).
                 VStack(alignment: .leading, spacing: 12) {
                     Text("I am a...")
                         .font(.headline)
                     HStack(spacing: 12) {
-                        ForEach([UserRole.student, .counselor], id: \.self) { r in
-                            RolePill(role: r, selected: role == r) {
-                                role = r
-                            }
+                        RolePill(role: .student, selected: role == .student) {
+                            role = .student
                         }
+                        CounselorComingSoonPill()
                     }
                 }
                 .padding(.horizontal)
@@ -89,7 +87,7 @@ struct OnboardingView: View {
     }
 
     private func createProfile() {
-        let profile = UserProfile(name: name.trimmingCharacters(in: .whitespaces), role: role)
+        let profile = UserProfile(name: name.trimmingCharacters(in: .whitespaces), role: .student)
         context.insert(profile)
         try? context.save()
     }
@@ -121,13 +119,66 @@ struct RolePill: View {
 // MARK: - Main Tab View
 
 struct MainTabView: View {
-    let profile: UserProfile
+    @Bindable var profile: UserProfile
 
     var body: some View {
         if profile.role == .counselor {
-            CounselorTabView(counselor: profile)
+            CounselorComingSoonView(profile: profile)
         } else {
             StudentTabView(profile: profile)
+        }
+    }
+}
+
+struct CounselorComingSoonPill: View {
+    var body: some View {
+        HStack {
+            Image(systemName: "person.2.fill")
+            Text("Counselor")
+            Text("Coming soon")
+                .font(.caption2.bold())
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(Color.orange.opacity(0.2))
+                .foregroundStyle(.orange)
+                .clipShape(Capsule())
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .background(Color(.systemGray6))
+        .foregroundStyle(.secondary)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .accessibilityLabel("Counselor, coming soon")
+    }
+}
+
+struct CounselorComingSoonView: View {
+    @Bindable var profile: UserProfile
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                Spacer()
+                Image(systemName: "person.2.slash")
+                    .font(.system(size: 56))
+                    .foregroundStyle(.secondary)
+                Text("Counselor tools are coming soon")
+                    .font(.title2.bold())
+                    .multilineTextAlignment(.center)
+                Text("Student–counselor CloudKit sharing is deferred for the first release. Existing counselor profiles can continue as a student to track applications locally.")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+                Button("Continue as student") {
+                    profile.role = .student
+                    try? profile.modelContext?.save()
+                }
+                .buttonStyle(.borderedProminent)
+                Spacer()
+            }
+            .padding()
+            .navigationTitle("Counselor")
         }
     }
 }

@@ -5,7 +5,11 @@ import Combine
 
 class CloudKitService: ObservableObject {
     static let shared = CloudKitService()
-    private let container = CKContainer(identifier: "iCloud.com.yourname.collegetracker")
+    /// Matches PRODUCT_BUNDLE_IDENTIFIER in the Xcode project (`edu.asu.jwang875.CollegeTracker`).
+    /// Counselor CKShare APIs below are unused in v1 — sharing is deferred, do not fake it with local UUIDs.
+    static let containerIdentifier = "iCloud.edu.asu.jwang875.CollegeTracker"
+    private let container = CKContainer(identifier: CloudKitService.containerIdentifier)
+
 
     @Published var iCloudAvailable = false
 

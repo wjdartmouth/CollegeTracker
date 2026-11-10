@@ -152,7 +152,7 @@ struct AddStudentView: View {
                     TextField("Student name", text: $name)
                 }
                 Section {
-                    Text("This creates a local student profile you can track. The student can sign in on their own device and their data will sync via iCloud.")
+                    Text("Counselor sharing is not available yet. This would only create a local profile on this device — CloudKit student sharing is deferred.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
