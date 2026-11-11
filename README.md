@@ -2,13 +2,17 @@
 
 An advanced iOS 17+ college application management app for students and counselors. Track deadlines, manage essays with AI-powered feedback, compare schools side-by-side, and visualize your progress — all synced across devices via iCloud.
 
+**Ship status:** see [SHIP_STATUS.md](SHIP_STATUS.md). Week 1 wires the bundled Hong Kong + Japan catalog (`universities_hk_japan_v1.json`, 830 schools) into a searchable add-college picker. Counselor CloudKit sharing and essay AI are deferred.
+
+> Bundle ID and CloudKit container follow the existing Xcode project: `edu.asu.jwang875.CollegeTracker` / `iCloud.edu.asu.jwang875.CollegeTracker`. Confirm before App Store Connect whether to keep this ASU-era identifier or migrate to `com.jianwang.CollegeTracker`.
+
 ---
 
 ## ✨ Features
 
 ### For Students
 - **Application dashboard** — Greeting, upcoming deadline carousel, college status board, and stats at a glance
-- **College management** — Add schools with acceptance rate, US News ranking, portal URL, and notes
+- **College management** — Add schools with acceptance rate, QS World ranking (HK + Japan catalog), portal URL, and notes
 - **9 application statuses** — Researching → In Progress → Submitted → Interviewing → Accepted / Waitlisted / Deferred / Rejected → Enrolled
 - **Deadline tracking** — Early Decision, Early Action, Regular Decision, Scholarship, Financial Aid, Interview, and custom deadlines with urgency color-coding (red < 7 days, amber < 30 days, green otherwise)
 - **Smart notifications** — Automatic reminders at 30 days, 1 week, 1 day, and day-of for every deadline
@@ -36,15 +40,17 @@ CollegeTracker/
 │                                       UNUserNotificationCenterDelegate setup
 │
 ├── Models/
-│   └── Models.swift                   All SwiftData models and enums:
-│                                       UserProfile, College, Deadline, Document,
-│                                       EssayFeedback, ApplicationStatus,
-│                                       DeadlineType, DocumentType, UserRole
+│   ├── Models.swift                   All SwiftData models and enums:
+│   └── CatalogCollege.swift           Bundled HK + Japan catalog row (Codable)
+│
+├── Resources/
+│   └── universities_hk_japan_v1.json  Trimmed 830-school HK + Japan catalog
 │
 ├── Services/
+│   ├── CollegeCatalogStore.swift      Loads and searches the bundled catalog
 │   ├── AIFeedbackService.swift        Anthropic API integration — structured essay
-│                                       feedback with score parsing
-│   ├── CloudKitService.swift          iCloud record zone creation + UICloudSharingController
+│                                       feedback with score parsing (deferred)
+│   ├── CloudKitService.swift          iCloud container `iCloud.edu.asu.jwang875.CollegeTracker`
 │   └── NotificationService.swift      Multi-interval deadline reminders (30d/7d/1d/0d)
 │
 ├── Views/
@@ -98,7 +104,7 @@ The top-level user record. Owns all colleges via a cascade-delete relationship.
 One school in the student's list.
 - `status: ApplicationStatus` — one of 9 statuses from Researching to Enrolled
 - `acceptanceRate: Double?` — for comparison and charts
-- `ranking: Int?` — US News rank
+- `ranking: Int?` / `qsRankText` — QS World rank from the bundled catalog
 - `portalURL: String?` — opens in Safari from the detail view
 - Cascades to `[Deadline]` and `[Document]` on delete
 
@@ -161,7 +167,7 @@ Overall Review · Structure & Flow · Authentic Voice · Prompt Alignment · Gra
 1. Xcode → **File → New → Project → iOS → App**
 2. Configure:
    - **Product Name**: `CollegeTracker`
-   - **Bundle Identifier**: `com.yourname.collegetracker`
+   - **Bundle Identifier**: `edu.asu.jwang875.CollegeTracker`
    - **Interface**: SwiftUI
    - **Language**: Swift
    - **Storage**: None *(SwiftData is configured manually)*
@@ -181,7 +187,7 @@ SwiftData's `.automatic` CloudKit configuration handles sync automatically — n
 
 1. Select the `CollegeTracker` target → **Signing & Capabilities**
 2. Add **iCloud** capability
-3. Under **CloudKit**, click **+** and add container: `iCloud.com.yourname.collegetracker`
+3. Under **CloudKit**, click **+** and add container: `iCloud.edu.asu.jwang875.CollegeTracker`
 4. Add **Push Notifications** capability (required for CloudKit push-based sync)
 
 ---
@@ -202,8 +208,8 @@ Required for SwiftData, `@Bindable`, `@Query`, and the Charts framework.
 
 ## ⚙️ Configuration Checklist
 
-- [ ] CloudKit container ID — update `iCloud.com.yourname.collegetracker` to yours throughout
-- [ ] Bundle ID — update `com.yourname.collegetracker` in Signing & Capabilities
+- [ ] CloudKit container ID — confirm `iCloud.edu.asu.jwang875.CollegeTracker` (or migrate to `iCloud.com.jianwang.CollegeTracker` before creating the App Store record)
+- [ ] Bundle ID — confirm `edu.asu.jwang875.CollegeTracker` (or migrate to `com.jianwang.CollegeTracker` before creating the App Store record)
 - [ ] Development Team — set in both Signing & Capabilities
 - [ ] Anthropic API key — add to `AIFeedbackService.swift` `URLRequest` headers for standalone use:
   ```swift

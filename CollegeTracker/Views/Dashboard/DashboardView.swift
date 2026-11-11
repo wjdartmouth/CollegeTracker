@@ -242,6 +242,10 @@ struct CollegeRowView: View {
                             .font(.caption)
                     }
                     .foregroundStyle(deadline.urgencyColor)
+                } else if let location = college.locationLine {
+                    Text(location)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 } else {
                     Text("No upcoming deadlines")
                         .font(.caption)

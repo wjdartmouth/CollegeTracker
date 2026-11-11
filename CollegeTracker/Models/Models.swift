@@ -84,6 +84,13 @@ class College {
     var portalURL: String?
     var logoColorHex: String       // Used for placeholder avatar color
     var createdAt: Date
+    /// Stable id from the bundled college-data catalog (e.g. HK001, JP012). Nil for custom entries.
+    var catalogId: String?
+    var city: String?
+    var countryRegion: String?
+    var localNativeName: String?
+    /// Raw QS WUR display string from the catalog (may be a number, band, or "unlisted").
+    var qsRankText: String?
     @Relationship(deleteRule: .cascade) var deadlines: [Deadline]
     @Relationship(deleteRule: .cascade) var documents: [Document]
     var profile: UserProfile?
@@ -95,8 +102,26 @@ class College {
         self.notes = ""
         self.logoColorHex = College.randomColor()
         self.createdAt = .now
+        self.catalogId = nil
+        self.city = nil
+        self.countryRegion = nil
+        self.localNativeName = nil
+        self.qsRankText = nil
         self.deadlines = []
         self.documents = []
+    }
+
+    var locationLine: String? {
+        let parts = [city, countryRegion].compactMap { $0?.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    var rankDisplay: String? {
+        if let text = qsRankText?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty {
+            return text
+        }
+        if let ranking { return "#\(ranking)" }
+        return nil
     }
 
     var abbreviation: String {

@@ -88,6 +88,17 @@ struct CollegeHeaderCard: View {
                     .foregroundStyle(Color(hex: college.logoColorHex))
             }
 
+            if let native = college.localNativeName, !native.isEmpty {
+                Text(native)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            if let location = college.locationLine {
+                Text(location)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             // Status picker
             Menu {
                 ForEach(ApplicationStatus.allCases) { status in
@@ -113,7 +124,7 @@ struct CollegeHeaderCard: View {
             }
 
             // Stats row
-            if college.acceptanceRate != nil || college.ranking != nil {
+            if college.acceptanceRate != nil || college.rankDisplay != nil {
                 HStack(spacing: 24) {
                     if let rate = college.acceptanceRate {
                         VStack {
@@ -124,11 +135,14 @@ struct CollegeHeaderCard: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
-                    if let rank = college.ranking {
+                    if let rank = college.rankDisplay {
                         VStack {
-                            Text("#\(rank)")
+                            Text(rank)
                                 .font(.headline.bold())
-                            Text("US News")
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.7)
+                                .multilineTextAlignment(.center)
+                            Text("QS Rank")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -477,7 +491,8 @@ struct CollegeCompareView: View {
     private let rows: [(label: String, value: (College) -> String)] = [
         ("Status",          { $0.status.rawValue }),
         ("Acceptance Rate", { $0.acceptanceRate.map { String(format: "%.1f%%", $0) } ?? "—" }),
-        ("US News Rank",    { $0.ranking.map { "#\($0)" } ?? "—" }),
+        ("QS Rank",         { $0.rankDisplay ?? "—" }),
+        ("Location",        { $0.locationLine ?? "—" }),
         ("Deadlines",       { "\($0.deadlines.count)" }),
         ("Documents",       { "\($0.documents.count)" }),
         ("Nearest Deadline",{ $0.nearestDeadline.map { $0.date.shortFormatted } ?? "None" }),
