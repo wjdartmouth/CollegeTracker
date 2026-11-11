@@ -18,17 +18,19 @@ struct CollegeDetailView: View {
 
                 // Tabs
                 Picker("Section", selection: $selectedTab) {
-                    Text("Deadlines").tag(0)
-                    Text("Documents").tag(1)
-                    Text("Notes").tag(2)
+                    Text("Pathways").tag(0)
+                    Text("Deadlines").tag(1)
+                    Text("Documents").tag(2)
+                    Text("Notes").tag(3)
                 }
                 .pickerStyle(.segmented)
                 .padding(.horizontal)
 
                 switch selectedTab {
-                case 0: DeadlinesSection(college: college, showAdd: $showAddDeadline)
-                case 1: DocumentsSection(college: college, showAdd: $showAddDocument)
-                case 2: NotesSection(college: college)
+                case 0: PathwaySection(college: college)
+                case 1: DeadlinesSection(college: college, showAdd: $showAddDeadline)
+                case 2: DocumentsSection(college: college, showAdd: $showAddDocument)
+                case 3: NotesSection(college: college)
                 default: EmptyView()
                 }
             }
@@ -374,17 +376,22 @@ struct AddDeadlineView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
 
-    @State private var type: DeadlineType = .regularDecision
+    @State private var type: DeadlineType
     @State private var customLabel = ""
     @State private var date = Calendar.current.date(byAdding: .month, value: 2, to: .now) ?? .now
     @State private var notify = true
+
+    init(college: College) {
+        self.college = college
+        _type = State(initialValue: DeadlineType.defaultType(for: college))
+    }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section {
                     Picker("Type", selection: $type) {
-                        ForEach(DeadlineType.allCases) { t in
+                        ForEach(DeadlineType.suggested(for: college)) { t in
                             Label(t.rawValue, systemImage: t.icon).tag(t)
                         }
                     }
@@ -435,15 +442,20 @@ struct AddDocumentView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
 
-    @State private var type: DocumentType = .supplementalEssay
+    @State private var type: DocumentType
     @State private var title = ""
     @State private var wordLimit = ""
+
+    init(college: College) {
+        self.college = college
+        _type = State(initialValue: DocumentType.defaultType(for: college))
+    }
 
     var body: some View {
         NavigationStack {
             Form {
                 Picker("Type", selection: $type) {
-                    ForEach(DocumentType.allCases) { t in
+                    ForEach(DocumentType.suggested(for: college)) { t in
                         Label(t.rawValue, systemImage: t.icon).tag(t)
                     }
                 }
