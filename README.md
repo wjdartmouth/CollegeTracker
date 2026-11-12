@@ -2,7 +2,7 @@
 
 An advanced iOS 17+ college application management app for students and counselors. Track deadlines, manage essays with AI-powered feedback, compare schools side-by-side, and visualize your progress — all synced across devices via iCloud.
 
-**Ship status:** see [SHIP_STATUS.md](SHIP_STATUS.md). The app is a student-first client for the bundled Hong Kong + Japan catalog (830 schools) with searchable add, catalog facts, and JUPAS / EJU (and related) pathway screens. Counselor CloudKit sharing and essay AI are deferred.
+**Ship status:** see [SHIP_STATUS.md](SHIP_STATUS.md). The app is a student-first client for the bundled Hong Kong + Japan catalog (839 schools: 21 Hong Kong SAR + 818 Japan) with searchable add, catalog facts, and JUPAS / EJU (and related) pathway screens. Counselor CloudKit sharing and essay AI are deferred.
 
 > Bundle ID and CloudKit container follow the existing Xcode project: `edu.asu.jwang875.CollegeTracker` / `iCloud.edu.asu.jwang875.CollegeTracker`. Confirm before App Store Connect whether to keep this ASU-era identifier or migrate to `com.jianwang.CollegeTracker`.
 
@@ -12,7 +12,7 @@ An advanced iOS 17+ college application management app for students and counselo
 
 ### For Students
 - **Application dashboard** — Greeting, upcoming deadline carousel, college status board, and stats at a glance
-- **College catalog** — Search and add from 830 bundled Hong Kong + Japan schools (college-data). Custom entry remains as a fallback.
+- **College catalog** — Search and add from 839 bundled Hong Kong + Japan schools (college-data: 21 Hong Kong SAR + 818 Japan). Custom entry remains as a fallback.
 - **9 application statuses** — Researching → In Progress → Submitted → Interviewing → Accepted / Waitlisted / Deferred / Rejected → Enrolled
 - **Deadline tracking** — Region-aware types: JUPAS and Non-JUPAS for Hong Kong; EJU, Common Test, Comprehensive (AO), and School Recommendation for Japan; plus scholarship, financial aid, interview, custom, and US ED/EA/RD. Urgency color-coding (red < 7 days, amber < 30 days, green otherwise).
 - **Smart notifications** — Automatic reminders at 30 days, 1 week, 1 day, and day-of for every deadline
@@ -45,8 +45,8 @@ CollegeTracker/
 │   └── AdmissionPathway.swift         JUPAS / EJU / other pathway rows + region helper
 │
 ├── Resources/
-│   ├── universities_hk_japan_v1.json  830-school HK + Japan catalog (incl. majors + notes)
-│   └── admissions_pathways_v1.json    HK + Japan admissions pathways (~3.3k rows)
+│   ├── universities_hk_japan_v1.json  839-school HK + Japan catalog (incl. majors + notes)
+│   └── admissions_pathways_v1.json    HK + Japan admissions pathways (official HK CSV + Japan join table)
 │
 ├── Services/
 │   ├── CollegeCatalogStore.swift      Loads and searches the bundled catalog
@@ -160,8 +160,8 @@ Overall Review · Structure & Flow · Authentic Voice · Prompt Alignment · Gra
 
 The app ships Hong Kong + Japan data from [college-data](https://github.com/wjdartmouth/college-data) as two JSON files under `CollegeTracker/Resources/`:
 
-- `universities_hk_japan_v1.json` — 830 schools, including majors and admissions notes
-- `admissions_pathways_v1.json` — Japan join table (EJU / domestic / international qualifications / returnee) plus structured JUPAS / Non-JUPAS (or direct application) rows for the 12 Hong Kong schools
+- `universities_hk_japan_v1.json` — 839 schools (21 Hong Kong SAR + 818 Japan), including majors and admissions notes
+- `admissions_pathways_v1.json` — Japan join table (EJU / domestic / international qualifications / returnee, plus `JP_SYSTEM`) and official `universities_hk_admissions_v1.csv` rows for 21 Hong Kong schools (JUPAS / local non-JUPAS / international non-JUPAS, plus `HK_SYSTEM`)
 
 The Xcode project uses a file-system synchronized group, so new files in `Resources/` are picked up automatically. To regenerate after a college-data update:
 
@@ -169,7 +169,7 @@ The Xcode project uses a file-system synchronized group, so new files in `Resour
 python3 scripts/generate_bundled_data.py
 ```
 
-The script looks for a sibling `college-data` or `college-data-git` checkout, or `COLLEGE_DATA_DIR`. Pathway timelines are descriptive; they are not turned into deadline records automatically.
+The script looks for a sibling `college-data` or `college-data-git` checkout, or `COLLEGE_DATA_DIR`. It requires the official Hong Kong admissions CSV (`universities_hk_admissions_v1.csv`) as well as the catalog and Japan admissions CSVs. Pathway timelines are descriptive; they are not turned into deadline records automatically.
 
 ---
 

@@ -93,7 +93,7 @@ struct AdmissionsStoreTests {
           "source": "inline",
           "generated": "2026-11-11",
           "region_focus": "Hong Kong SAR + Japan",
-          "count": 5,
+          "count": 8,
           "pathways_by_id": {
             "HK001": [
               {
@@ -145,6 +145,35 @@ struct AdmissionsStoreTests {
                 "notes": "Fallback",
                 "confidence": "medium"
               }
+            ],
+            "HK_SYSTEM": [
+              {
+                "student_category": "international_non_jupas",
+                "pathway_name": "HK system international norm",
+                "exams_required": "IB / A-Level",
+                "typical_timeline": "Autumn main round",
+                "language_requirements": "English",
+                "notes": "Fallback",
+                "confidence": "medium"
+              },
+              {
+                "student_category": "non_jupas_local",
+                "pathway_name": "HK system local non-JUPAS norm",
+                "exams_required": "Direct / E-APP",
+                "typical_timeline": "Autumn",
+                "language_requirements": "English or Chinese",
+                "notes": "Fallback",
+                "confidence": "medium"
+              },
+              {
+                "student_category": "jupas_local",
+                "pathway_name": "HK system JUPAS norm",
+                "exams_required": "HKDSE via JUPAS",
+                "typical_timeline": "JUPAS calendar",
+                "language_requirements": "English",
+                "notes": "Fallback",
+                "confidence": "medium"
+              }
             ]
           }
         }
@@ -169,7 +198,85 @@ struct AdmissionsStoreTests {
         #expect(rows.count == 1)
         #expect(rows[0].pathwayName == "National EJU norm")
         #expect(store.pathways(forCatalogId: nil).isEmpty)
-        #expect(store.pathways(forCatalogId: "HK999").isEmpty)
+    }
+
+    @Test func hongKongMissingIdFallsBackToSystemNorms() throws {
+        let store = try AdmissionsStore(data: sampleData())
+        let fallback = store.pathways(forCatalogId: "HK999")
+        #expect(fallback.map(\.pathwayName) == [
+            "HK system international norm",
+            "HK system local non-JUPAS norm",
+            "HK system JUPAS norm"
+        ])
+        // A school with its own rows must not receive the system fallback.
+        let hku = store.pathways(forCatalogId: "HK001")
+        #expect(hku.count == 2)
+        #expect(hku.map(\.pathwayName).contains("HK system JUPAS norm") == false)
+    }
+
+    @Test func officialHongKongCategoriesTitleAndSort() throws {
+        let json = """
+        {
+          "version": "test",
+          "source": "inline",
+          "generated": "2026-11-12",
+          "pathways_by_id": {
+            "HK013": [
+              {
+                "student_category": "jupas_local",
+                "pathway_name": "SSSDP Year 1 via JUPAS",
+                "exams_required": "HKDSE via JUPAS",
+                "typical_timeline": "JUPAS calendar",
+                "language_requirements": "English",
+                "notes": "",
+                "confidence": "high"
+              },
+              {
+                "student_category": "non_jupas_local",
+                "pathway_name": "Local non-JUPAS",
+                "exams_required": "Direct / E-APP",
+                "typical_timeline": "Autumn",
+                "language_requirements": "English",
+                "notes": "",
+                "confidence": "high"
+              },
+              {
+                "student_category": "international_non_jupas",
+                "pathway_name": "International qualifications",
+                "exams_required": "IB / A-Level",
+                "typical_timeline": "Autumn main round",
+                "language_requirements": "English",
+                "notes": "",
+                "confidence": "high"
+              }
+            ]
+          }
+        }
+        """
+        let store = try AdmissionsStore(data: Data(json.utf8))
+        let rows = store.pathways(forCatalogId: "HK013")
+        #expect(rows.map(\.studentCategory) == [
+            "international_non_jupas",
+            "non_jupas_local",
+            "jupas_local"
+        ])
+        #expect(rows.map(\.categoryTitle) == [
+            "Non-JUPAS / International",
+            "Non-JUPAS (local)",
+            "JUPAS (HKDSE)"
+        ])
+        // Old hardcoded slugs remain mapped for back-compat with earlier samples.
+        let oldSlug = AdmissionPathway(
+            studentCategory: "local_jupas",
+            pathwayName: "JUPAS (HKDSE)",
+            examsRequired: "HKDSE",
+            typicalTimeline: "JUPAS calendar",
+            languageRequirements: "English",
+            notes: "",
+            confidence: "high"
+        )
+        #expect(oldSlug.categoryTitle == "JUPAS (HKDSE)")
+        #expect(oldSlug.categorySortIndex == 2)
     }
 }
 

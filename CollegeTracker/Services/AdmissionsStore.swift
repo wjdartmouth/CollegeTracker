@@ -7,6 +7,7 @@ final class AdmissionsStore {
 
     static let bundledResourceName = "admissions_pathways_v1"
     static let systemJapanCatalogId = "JP_SYSTEM"
+    static let systemHongKongCatalogId = "HK_SYSTEM"
 
     let pathwaysById: [String: [AdmissionPathway]]
     let version: String
@@ -53,6 +54,7 @@ final class AdmissionsStore {
 
     /// Pathways for a catalog school, sorted for student display.
     /// Japan schools fall back to national-norm (`JP_SYSTEM`) rows if the id is missing.
+    /// Hong Kong schools fall back to (`HK_SYSTEM`) rows the same way.
     func pathways(forCatalogId id: String?) -> [AdmissionPathway] {
         guard let raw = id?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
             return []
@@ -67,6 +69,9 @@ final class AdmissionsStore {
             }
         }
         if raw.uppercased().hasPrefix("JP"), let fallback = pathwaysById[Self.systemJapanCatalogId] {
+            return fallback.sorted { $0.categorySortIndex < $1.categorySortIndex }
+        }
+        if raw.uppercased().hasPrefix("HK"), let fallback = pathwaysById[Self.systemHongKongCatalogId] {
             return fallback.sorted { $0.categorySortIndex < $1.categorySortIndex }
         }
         return []

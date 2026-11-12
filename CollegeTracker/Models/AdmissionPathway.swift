@@ -24,7 +24,8 @@ struct AdmissionPathway: Codable, Hashable, Identifiable, Sendable {
 
     var categoryTitle: String {
         switch studentCategory {
-        case "local_jupas": return "JUPAS (HKDSE)"
+        case "jupas_local", "local_jupas": return "JUPAS (HKDSE)"
+        case "non_jupas_local": return "Non-JUPAS (local)"
         case "international_non_jupas": return "Non-JUPAS / International"
         case "direct_application": return "Direct application"
         case "japanese_domestic": return "Domestic (Japan)"
@@ -48,11 +49,13 @@ struct AdmissionPathway: Codable, Hashable, Identifiable, Sendable {
     }
 
     /// Preferred display order for HK / Japan student categories.
+    /// Official HK slugs list international first, then local non-JUPAS, then JUPAS.
     var categorySortIndex: Int {
         switch studentCategory {
         case "international_non_jupas": return 0
-        case "local_jupas": return 1
-        case "direct_application": return 2
+        case "non_jupas_local": return 1
+        case "jupas_local", "local_jupas": return 2
+        case "direct_application": return 3
         case "international_eju": return 10
         case "international_qualifications": return 11
         case "overseas_returnee": return 12
