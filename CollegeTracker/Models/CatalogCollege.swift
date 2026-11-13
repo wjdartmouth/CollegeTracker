@@ -15,6 +15,8 @@ struct CatalogCollege: Codable, Identifiable, Hashable, Sendable {
     let qsRankYear: String
     let tuitionApproxUsd: String
     let tuitionCurrency: String
+    let majorsFaculties: String?
+    let admissionsNotes: String?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -29,6 +31,40 @@ struct CatalogCollege: Codable, Identifiable, Hashable, Sendable {
         case qsRankYear = "qs_rank_year"
         case tuitionApproxUsd = "tuition_approx_usd"
         case tuitionCurrency = "tuition_currency"
+        case majorsFaculties = "majors_faculties"
+        case admissionsNotes = "admissions_notes"
+    }
+
+    init(
+        id: String,
+        officialEnglishName: String,
+        localNativeName: String,
+        city: String,
+        countryRegion: String,
+        website: String,
+        type: String,
+        foundedYear: String,
+        qsWurRank: String,
+        qsRankYear: String,
+        tuitionApproxUsd: String,
+        tuitionCurrency: String,
+        majorsFaculties: String? = nil,
+        admissionsNotes: String? = nil
+    ) {
+        self.id = id
+        self.officialEnglishName = officialEnglishName
+        self.localNativeName = localNativeName
+        self.city = city
+        self.countryRegion = countryRegion
+        self.website = website
+        self.type = type
+        self.foundedYear = foundedYear
+        self.qsWurRank = qsWurRank
+        self.qsRankYear = qsRankYear
+        self.tuitionApproxUsd = tuitionApproxUsd
+        self.tuitionCurrency = tuitionCurrency
+        self.majorsFaculties = majorsFaculties
+        self.admissionsNotes = admissionsNotes
     }
 
     var displayName: String { officialEnglishName }
@@ -46,6 +82,38 @@ struct CatalogCollege: Codable, Identifiable, Hashable, Sendable {
     /// QS overall rank when the catalog value is a single integer (e.g. "17"). Bands like "711-720" return nil.
     var numericQSRank: Int? {
         Int(qsWurRank.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
+
+    var majorList: [String] {
+        (majorsFaculties ?? "")
+            .split(separator: ";")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
+
+    /// Catalog tuition is stored as an approximate USD figure (e.g. "~23300").
+    var tuitionDisplay: String? {
+        let raw = tuitionApproxUsd.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !raw.isEmpty else { return nil }
+        let digits = raw.replacingOccurrences(of: "~", with: "").replacingOccurrences(of: ",", with: "")
+        if let value = Double(digits) {
+            let formatter = NumberFormatter()
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.numberStyle = .decimal
+            formatter.maximumFractionDigits = 0
+            let formatted = formatter.string(from: NSNumber(value: value)) ?? digits
+            return "≈ US$\(formatted)"
+        }
+        return raw
+    }
+
+    var isHongKong: Bool {
+        countryRegion.localizedCaseInsensitiveContains("Hong Kong") || id.uppercased().hasPrefix("HK")
+    }
+
+    var isJapan: Bool {
+        countryRegion.caseInsensitiveCompare("Japan") == .orderedSame || id.uppercased().hasPrefix("JP")
     }
 
     func matches(_ query: String) -> Bool {

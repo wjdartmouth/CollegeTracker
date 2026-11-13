@@ -2,7 +2,7 @@
 
 An advanced iOS 17+ college application management app for students and counselors. Track deadlines, manage essays with AI-powered feedback, compare schools side-by-side, and visualize your progress — all synced across devices via iCloud.
 
-**Ship status:** see [SHIP_STATUS.md](SHIP_STATUS.md). Week 1 wires the bundled Hong Kong + Japan catalog (`universities_hk_japan_v1.json`, 830 schools) into a searchable add-college picker. Counselor CloudKit sharing and essay AI are deferred.
+**Ship status:** see [SHIP_STATUS.md](SHIP_STATUS.md). The app is a student-first client for the bundled Hong Kong + Japan catalog (839 schools: 21 Hong Kong SAR + 818 Japan) with searchable add, catalog facts, and JUPAS / EJU (and related) pathway screens. Counselor CloudKit sharing and essay AI are deferred.
 
 > Bundle ID and CloudKit container follow the existing Xcode project: `edu.asu.jwang875.CollegeTracker` / `iCloud.edu.asu.jwang875.CollegeTracker`. Confirm before App Store Connect whether to keep this ASU-era identifier or migrate to `com.jianwang.CollegeTracker`.
 
@@ -11,21 +11,19 @@ An advanced iOS 17+ college application management app for students and counselo
 ## ✨ Features
 
 ### For Students
-- **Application dashboard** — Greeting, upcoming deadline carousel, college status board, and stats at a glance
-- **College management** — Add schools with acceptance rate, QS World ranking (HK + Japan catalog), portal URL, and notes
+- **Application dashboard** — Greeting, overdue and upcoming deadline carousels, college status board, and Schools / In Progress / Upcoming stats
+- **College catalog** — Search and add from 839 bundled Hong Kong + Japan schools (college-data: 21 Hong Kong SAR + 818 Japan). Custom entry remains as a fallback.
 - **9 application statuses** — Researching → In Progress → Submitted → Interviewing → Accepted / Waitlisted / Deferred / Rejected → Enrolled
-- **Deadline tracking** — Early Decision, Early Action, Regular Decision, Scholarship, Financial Aid, Interview, and custom deadlines with urgency color-coding (red < 7 days, amber < 30 days, green otherwise)
-- **Smart notifications** — Automatic reminders at 30 days, 1 week, 1 day, and day-of for every deadline
-- **Document vault** — Store Common App essays, supplemental essays, transcripts, recommendation letters, test scores, and activity resumes across all schools in one place
+- **Deadline tracking** — Region-aware types: JUPAS and Non-JUPAS for Hong Kong; EJU, Common Test, Comprehensive (AO), and School Recommendation for Japan; plus scholarship, financial aid, interview, custom, and US ED/EA/RD. Urgency color-coding (red < 7 days, amber < 30 days, green otherwise).
+- **Smart notifications** — Local reminders at 9:00, 30 days / 1 week / 1 day / day-of, titled with the deadline type (JUPAS, EJU, etc.). Regular notifications only — no Critical Alerts entitlement. Reminders reschedule when the student tabs appear and cancel when a deadline is completed or deleted.
+- **Document vault** — Region-aware types including JUPAS applications, personal statements, school reports, EJU scores, transcripts, recommendations, and (still available) Common App / supplemental essays.
 - **Essay editor** — Full-screen editor with live word count progress bar and word limit tracking
 - **AI essay feedback** — Claude-powered analysis with score (X/10), strengths, areas to improve, specific suggestions, and encouragement
 - **College comparison** — Side-by-side table for up to 3 schools
-- **Progress charts** — Donut chart of application statuses, quick stats grid
+- **Progress charts** — Donut chart of application statuses, chronological deadlines-by-month, document progress (JUPAS / personal statement / EJU), quick stats grid
 
 ### For Counselors
-- **Multi-student support** — Counselor role with managed student IDs
-- **CloudKit sharing** — Share a student's record zone via the native iOS sharing UI
-- **Same powerful views** — All student features available when viewing a student's profile
+- **Coming soon** — Onboarding offers a Counselor chip marked Coming soon. Existing counselor profiles see a gate screen and can continue as a student. CloudKit student-sharing is deferred; there is no fake local-UUID "iCloud sharing".
 
 ---
 
@@ -41,17 +39,22 @@ CollegeTracker/
 │
 ├── Models/
 │   ├── Models.swift                   All SwiftData models and enums:
-│   └── CatalogCollege.swift           Bundled HK + Japan catalog row (Codable)
+│   ├── CatalogCollege.swift           Bundled HK + Japan catalog row (Codable)
+│   └── AdmissionPathway.swift         JUPAS / EJU / other pathway rows + region helper
 │
 ├── Resources/
-│   └── universities_hk_japan_v1.json  Trimmed 830-school HK + Japan catalog
+│   ├── universities_hk_japan_v1.json  839-school HK + Japan catalog (incl. majors + notes)
+│   └── admissions_pathways_v1.json    HK + Japan admissions pathways (official HK CSV + Japan join table)
 │
 ├── Services/
 │   ├── CollegeCatalogStore.swift      Loads and searches the bundled catalog
+│   ├── AdmissionsStore.swift          Looks up pathways by catalog id
 │   ├── AIFeedbackService.swift        Anthropic API integration — structured essay
 │                                       feedback with score parsing (deferred)
 │   ├── CloudKitService.swift          iCloud container `iCloud.edu.asu.jwang875.CollegeTracker`
-│   └── NotificationService.swift      Multi-interval deadline reminders (30d/7d/1d/0d)
+│   ├── NotificationService.swift      Local (non-critical) deadline reminders (30d/7d/1d/0d at 9:00)
+│   ├── DeadlineReminderPlan.swift     Reminder identifiers, titles, and lead-time policy
+│   └── StudentCRMMetrics.swift        Chronological month buckets and document progress stats
 │
 ├── Views/
 │   ├── RootView.swift                 Onboarding flow, role selection, MainTabView
@@ -60,9 +63,10 @@ CollegeTracker/
 │   │                                   carousel, college list
 │   ├── Colleges/
 │   │   ├── CollegeListView.swift      Searchable list, status filter chips,
-│   │   │                              compare mode, add college sheet
-│   │   └── CollegeDetailView.swift    Segmented tabs: deadlines, documents, notes;
-│   │                                   college header card, side-by-side comparison
+│   │   │                              compare mode, catalog add-college sheet
+│   │   ├── CatalogCollegePicker.swift Search + region chips for the bundled catalog
+│   │   ├── PathwaySection.swift       Catalog facts + JUPAS / EJU pathway cards
+│   │   └── CollegeDetailView.swift    Segmented tabs: pathways, deadlines, documents, notes
 │   ├── Documents/
 │   │   ├── DocumentVaultView.swift    Cross-college document vault with type filters
 │   │   │                              and AI feedback nudge banner
@@ -72,7 +76,7 @@ CollegeTracker/
 │   │                                   structured feedback sections, history log
 │   └── Charts/
 │       └── ProgressDashboardView.swift  Overall progress ring, status donut chart,
-│                                         deadlines-by-month bar chart, essay stats,
+│                                         deadlines-by-month bar chart, document progress,
 │                                         quick stats grid
 │
 └── Shared/
@@ -110,7 +114,7 @@ One school in the student's list.
 
 ### `Deadline`
 A specific due date tied to a college.
-- `type: DeadlineType` — 7 types including Early Decision, Scholarship, and Custom
+- `type: DeadlineType` — Region-aware list (JUPAS, Non-JUPAS, EJU, Common Test, Comprehensive (AO), School Recommendation, plus scholarship / interview / custom and US ED/EA/RD)
 - `daysRemaining` — computed from today, drives urgency color
 - `urgencyColor` — red (≤7 days), amber (≤30 days), green (>30 days)
 
@@ -149,6 +153,23 @@ The service then parses that format using regex and string extraction into a `Pa
 Overall Review · Structure & Flow · Authentic Voice · Prompt Alignment · Grammar & Style · Conciseness
 
 > ⚠️ The Anthropic API key is handled by the backend proxy in the Claude.ai environment. For standalone use, add your API key to the `URLRequest` headers in `AIFeedbackService.swift`.
+
+---
+
+## Bundled catalog and pathways
+
+The app ships Hong Kong + Japan data from [college-data](https://github.com/wjdartmouth/college-data) as two JSON files under `CollegeTracker/Resources/`:
+
+- `universities_hk_japan_v1.json` — 839 schools (21 Hong Kong SAR + 818 Japan), including majors and admissions notes
+- `admissions_pathways_v1.json` — Japan join table (EJU / domestic / international qualifications / returnee, plus `JP_SYSTEM`) and official `universities_hk_admissions_v1.csv` rows for 21 Hong Kong schools (JUPAS / local non-JUPAS / international non-JUPAS, plus `HK_SYSTEM`)
+
+The Xcode project uses a file-system synchronized group, so new files in `Resources/` are picked up automatically. To regenerate after a college-data update:
+
+```bash
+python3 scripts/generate_bundled_data.py
+```
+
+The script looks for a sibling `college-data` or `college-data-git` checkout, or `COLLEGE_DATA_DIR`. It requires the official Hong Kong admissions CSV (`universities_hk_admissions_v1.csv`) as well as the catalog and Japan admissions CSVs. Pathway timelines are descriptive; they are not turned into deadline records automatically.
 
 ---
 

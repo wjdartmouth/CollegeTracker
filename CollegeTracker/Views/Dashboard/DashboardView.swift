@@ -6,23 +6,33 @@ struct DashboardView: View {
     let profile: UserProfile
     @Environment(\.modelContext) private var context
     @State private var showAddCollege = false
+    @State private var notificationsDenied = false
 
     var colleges: [College] { profile.colleges }
 
     var upcomingDeadlines: [(deadline: Deadline, college: College)] {
+        deadlinePairs(where: { StudentCRMMetrics.isUpcoming($0.date) })
+            .prefix(8)
+            .map { $0 }
+    }
+
+    var overdueDeadlines: [(deadline: Deadline, college: College)] {
+        deadlinePairs(where: { StudentCRMMetrics.isOverdue($0.date) })
+    }
+
+    var inProgressCount: Int { colleges.filter { $0.status == .inProgress }.count }
+    var upcomingCount: Int {
+        colleges.flatMap(\.deadlines).filter { !$0.isComplete && StudentCRMMetrics.isUpcoming($0.date) }.count
+    }
+
+    private func deadlinePairs(where matches: (Deadline) -> Bool) -> [(deadline: Deadline, college: College)] {
         colleges.flatMap { college in
             college.deadlines
-                .filter { !$0.isComplete && $0.date >= Calendar.current.startOfDay(for: .now) }
+                .filter { !$0.isComplete && matches($0) }
                 .map { (deadline: $0, college: college) }
         }
         .sorted { $0.deadline.date < $1.deadline.date }
-        .prefix(8)
-        .map { $0 }
     }
-
-    var completedCount: Int { colleges.filter { $0.status == .accepted || $0.status == .enrolled }.count }
-    var submittedCount: Int { colleges.filter { $0.status == .submitted || $0.status == .interviewing }.count }
-    var inProgressCount: Int { colleges.filter { $0.status == .inProgress }.count }
 
     var body: some View {
         NavigationStack {
@@ -43,16 +53,37 @@ struct DashboardView: View {
                     // Stats row
                     HStack(spacing: 12) {
                         StatCard(value: colleges.count, label: "Schools", icon: "building.columns.fill", color: .blue)
-                        StatCard(value: submittedCount, label: "Submitted", icon: "paperplane.fill", color: .purple)
-                        StatCard(value: completedCount, label: "Decisions", icon: "checkmark.seal.fill", color: .green)
+                        StatCard(value: inProgressCount, label: "In Progress", icon: "pencil.circle.fill", color: .purple)
+                        StatCard(value: upcomingCount, label: "Upcoming", icon: "calendar.badge.clock", color: .orange)
                     }
                     .padding(.horizontal)
+
+                    if notificationsDenied {
+                        NotificationDeniedBanner()
+                            .padding(.horizontal)
+                    }
+
+                    if !overdueDeadlines.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            SectionHeader(title: "Overdue", icon: "exclamationmark.circle.fill")
+                            DeadlineTimelineView(items: overdueDeadlines)
+                        }
+                        .padding(.horizontal)
+                    }
 
                     // Upcoming deadlines
                     if !upcomingDeadlines.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
                             SectionHeader(title: "Upcoming Deadlines", icon: "calendar.badge.clock")
                             DeadlineTimelineView(items: upcomingDeadlines)
+                        }
+                        .padding(.horizontal)
+                    } else if !colleges.isEmpty && overdueDeadlines.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            SectionHeader(title: "Upcoming Deadlines", icon: "calendar.badge.clock")
+                            Text("Add a JUPAS, EJU, or other deadline from a school's Deadlines tab. Local reminders fire at 9:00 — 30 days, 1 week, 1 day, and the day of.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
                         }
                         .padding(.horizontal)
                     }
@@ -105,6 +136,11 @@ struct DashboardView: View {
             }
             .sheet(isPresented: $showAddCollege) {
                 AddCollegeView(profile: profile)
+            }
+            .onAppear {
+                NotificationService.shared.currentAuthorizationState { state in
+                    notificationsDenied = (state == .denied)
+                }
             }
         }
     }
@@ -293,5 +329,27 @@ struct EmptyStateView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(40)
+    }
+}
+
+
+// MARK: - Notification denied
+
+struct NotificationDeniedBanner: View {
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "bell.slash.fill")
+                .foregroundStyle(.orange)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Deadline reminders are off")
+                    .font(.subheadline.bold())
+                Text("Enable notifications in Settings to get JUPAS, EJU, and other deadline alerts at 9:00. These are regular local notifications, not Critical Alerts.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .cardStyle()
     }
 }

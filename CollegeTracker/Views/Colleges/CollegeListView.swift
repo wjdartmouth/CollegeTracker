@@ -201,6 +201,13 @@ struct AddCollegeView: View {
     @State private var deadlineType: DeadlineType = .regularDecision
     @State private var deadlineDate = Calendar.current.date(byAdding: .month, value: 3, to: .now) ?? .now
 
+    private var deadlineTypeChoices: [DeadlineType] {
+        if let selectedCatalog {
+            return DeadlineType.suggested(for: CatalogRegion.of(selectedCatalog))
+        }
+        return DeadlineType.suggested(for: .other)
+    }
+
     private var alreadyAddedCatalogIDs: Set<String> {
         Set(profile.colleges.compactMap(\.catalogId))
     }
@@ -230,6 +237,7 @@ struct AddCollegeView: View {
                             name = ""
                             portalURL = ""
                             ranking = ""
+                            deadlineType = DeadlineType.defaultType(for: .other)
                             phase = .details
                         }
                     )
@@ -317,7 +325,7 @@ struct AddCollegeView: View {
                 Toggle("Add a deadline", isOn: $addDeadline)
                 if addDeadline {
                     Picker("Type", selection: $deadlineType) {
-                        ForEach(DeadlineType.allCases) { t in
+                        ForEach(deadlineTypeChoices) { t in
                             Text(t.rawValue).tag(t)
                         }
                     }
@@ -339,6 +347,7 @@ struct AddCollegeView: View {
         name = college.officialEnglishName
         portalURL = college.website
         ranking = college.numericQSRank.map(String.init) ?? ""
+        deadlineType = DeadlineType.defaultType(for: CatalogRegion.of(college))
     }
 
     private func save() {

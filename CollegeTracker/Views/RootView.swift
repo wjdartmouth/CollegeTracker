@@ -205,6 +205,9 @@ struct StudentTabView: View {
                 .tabItem { Label("Progress", systemImage: "chart.pie.fill") }
                 .tag(3)
         }
+        .onAppear {
+            NotificationService.shared.requestPermissionAndReschedule(colleges: profile.colleges)
+        }
     }
 }
 

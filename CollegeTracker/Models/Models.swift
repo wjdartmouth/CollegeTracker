@@ -153,6 +153,12 @@ enum DeadlineType: String, Codable, CaseIterable, Identifiable {
     case earlyDecision   = "Early Decision"
     case earlyAction     = "Early Action"
     case regularDecision = "Regular Decision"
+    case jupas           = "JUPAS"
+    case nonJupas        = "Non-JUPAS"
+    case eju             = "EJU"
+    case commonTest      = "Common Test"
+    case comprehensiveAO = "Comprehensive (AO)"
+    case schoolRecommendation = "School Recommendation"
     case scholarship     = "Scholarship"
     case financialAid    = "Financial Aid"
     case interview       = "Interview"
@@ -165,11 +171,45 @@ enum DeadlineType: String, Codable, CaseIterable, Identifiable {
         case .earlyDecision:   return "star.fill"
         case .earlyAction:     return "bolt.fill"
         case .regularDecision: return "calendar"
+        case .jupas:           return "building.columns.fill"
+        case .nonJupas:        return "globe.asia.australia.fill"
+        case .eju:             return "pencil.and.list.clipboard"
+        case .commonTest:      return "doc.text.magnifyingglass"
+        case .comprehensiveAO: return "person.text.rectangle.fill"
+        case .schoolRecommendation: return "envelope.badge.fill"
         case .scholarship:     return "dollarsign.circle.fill"
         case .financialAid:    return "banknote.fill"
         case .interview:       return "person.fill.viewfinder"
         case .custom:          return "flag.fill"
         }
+    }
+
+    /// Region-aware picker order. US ED/EA/RD remain available for every school so existing records still decode.
+    static func suggested(for college: College) -> [DeadlineType] {
+        suggested(for: CatalogRegion.of(college))
+    }
+
+    static func suggested(for region: CatalogRegion) -> [DeadlineType] {
+        switch region {
+        case .hongKong:
+            return [.jupas, .nonJupas, .interview, .scholarship, .financialAid, .custom,
+                    .earlyDecision, .earlyAction, .regularDecision]
+        case .japan:
+            return [.eju, .commonTest, .comprehensiveAO, .schoolRecommendation, .interview,
+                    .scholarship, .custom, .earlyDecision, .earlyAction, .regularDecision]
+        case .other:
+            return [.regularDecision, .earlyAction, .earlyDecision, .scholarship, .financialAid,
+                    .interview, .jupas, .nonJupas, .eju, .commonTest, .comprehensiveAO,
+                    .schoolRecommendation, .custom]
+        }
+    }
+
+    static func defaultType(for college: College) -> DeadlineType {
+        suggested(for: college).first ?? .custom
+    }
+
+    static func defaultType(for region: CatalogRegion) -> DeadlineType {
+        suggested(for: region).first ?? .custom
     }
 }
 
@@ -226,9 +266,13 @@ class Deadline {
 enum DocumentType: String, Codable, CaseIterable, Identifiable {
     case commonAppEssay     = "Common App Essay"
     case supplementalEssay  = "Supplemental Essay"
+    case personalStatement  = "Personal Statement"
+    case jupasApplication   = "JUPAS Application"
+    case schoolReport       = "School Report"
     case transcript         = "Transcript"
     case recommendation     = "Recommendation Letter"
     case testScores         = "Test Scores"
+    case ejuScores          = "EJU Scores"
     case activitiesResume   = "Activities Resume"
     case other              = "Other"
 
@@ -238,16 +282,45 @@ enum DocumentType: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .commonAppEssay:    return "doc.text.fill"
         case .supplementalEssay: return "doc.fill"
+        case .personalStatement: return "text.alignleft"
+        case .jupasApplication:  return "building.columns.fill"
+        case .schoolReport:      return "doc.richtext.fill"
         case .transcript:        return "list.bullet.rectangle.fill"
         case .recommendation:    return "envelope.fill"
         case .testScores:        return "checkmark.square.fill"
+        case .ejuScores:         return "pencil.and.list.clipboard"
         case .activitiesResume:  return "person.text.rectangle.fill"
         case .other:             return "paperclip"
         }
     }
 
     var supportsAIFeedback: Bool {
-        self == .commonAppEssay || self == .supplementalEssay
+        self == .commonAppEssay || self == .supplementalEssay || self == .personalStatement
+    }
+
+    static func suggested(for college: College) -> [DocumentType] {
+        suggested(for: CatalogRegion.of(college))
+    }
+
+    static func suggested(for region: CatalogRegion) -> [DocumentType] {
+        switch region {
+        case .hongKong:
+            return [.jupasApplication, .personalStatement, .schoolReport, .transcript,
+                    .recommendation, .testScores, .other, .supplementalEssay,
+                    .commonAppEssay, .activitiesResume, .ejuScores]
+        case .japan:
+            return [.personalStatement, .ejuScores, .transcript, .recommendation,
+                    .testScores, .schoolReport, .other, .supplementalEssay,
+                    .commonAppEssay, .activitiesResume, .jupasApplication]
+        case .other:
+            return [.commonAppEssay, .supplementalEssay, .personalStatement, .transcript,
+                    .recommendation, .testScores, .activitiesResume, .schoolReport,
+                    .jupasApplication, .ejuScores, .other]
+        }
+    }
+
+    static func defaultType(for college: College) -> DocumentType {
+        suggested(for: college).first ?? .other
     }
 }
 

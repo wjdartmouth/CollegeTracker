@@ -83,3 +83,336 @@ struct CollegeCatalogStoreTests {
         #expect(band.qsRankDisplay == "711-720")
     }
 }
+
+struct AdmissionsStoreTests {
+
+    private func sampleData() -> Data {
+        let json = """
+        {
+          "version": "test",
+          "source": "inline",
+          "generated": "2026-11-11",
+          "region_focus": "Hong Kong SAR + Japan",
+          "count": 8,
+          "pathways_by_id": {
+            "HK001": [
+              {
+                "student_category": "local_jupas",
+                "pathway_name": "JUPAS (HKDSE)",
+                "exams_required": "HKDSE via JUPAS",
+                "typical_timeline": "JUPAS calendar",
+                "language_requirements": "English",
+                "notes": "Local HKDSE",
+                "confidence": "high"
+              },
+              {
+                "student_category": "international_non_jupas",
+                "pathway_name": "Non-JUPAS / International",
+                "exams_required": "IB / A-Level",
+                "typical_timeline": "Oct–Nov main round",
+                "language_requirements": "English",
+                "notes": "Direct apply",
+                "confidence": "high"
+              }
+            ],
+            "JP001": [
+              {
+                "student_category": "japanese_domestic",
+                "pathway_name": "一般選抜",
+                "exams_required": "Common Test",
+                "typical_timeline": "January",
+                "language_requirements": "Japanese",
+                "notes": "",
+                "confidence": "high"
+              },
+              {
+                "student_category": "international_eju",
+                "pathway_name": "私費留学生",
+                "exams_required": "EJU",
+                "typical_timeline": "EJU Jun/Nov",
+                "language_requirements": "Japanese",
+                "notes": "Verify 募集要項",
+                "confidence": "high"
+              }
+            ],
+            "JP_SYSTEM": [
+              {
+                "student_category": "international_eju",
+                "pathway_name": "National EJU norm",
+                "exams_required": "EJU",
+                "typical_timeline": "June / November",
+                "language_requirements": "Japanese",
+                "notes": "Fallback",
+                "confidence": "medium"
+              }
+            ],
+            "HK_SYSTEM": [
+              {
+                "student_category": "international_non_jupas",
+                "pathway_name": "HK system international norm",
+                "exams_required": "IB / A-Level",
+                "typical_timeline": "Autumn main round",
+                "language_requirements": "English",
+                "notes": "Fallback",
+                "confidence": "medium"
+              },
+              {
+                "student_category": "non_jupas_local",
+                "pathway_name": "HK system local non-JUPAS norm",
+                "exams_required": "Direct / E-APP",
+                "typical_timeline": "Autumn",
+                "language_requirements": "English or Chinese",
+                "notes": "Fallback",
+                "confidence": "medium"
+              },
+              {
+                "student_category": "jupas_local",
+                "pathway_name": "HK system JUPAS norm",
+                "exams_required": "HKDSE via JUPAS",
+                "typical_timeline": "JUPAS calendar",
+                "language_requirements": "English",
+                "notes": "Fallback",
+                "confidence": "medium"
+              }
+            ]
+          }
+        }
+        """
+        return Data(json.utf8)
+    }
+
+    @Test func decodesPathwaysAndSortsInternationalFirst() throws {
+        let store = try AdmissionsStore(data: sampleData())
+        let hk = store.pathways(forCatalogId: "HK001")
+        #expect(hk.map(\.studentCategory) == ["international_non_jupas", "local_jupas"])
+        #expect(hk[0].categoryTitle == "Non-JUPAS / International")
+
+        let jp = store.pathways(forCatalogId: "jp001")
+        #expect(jp.map(\.studentCategory) == ["international_eju", "japanese_domestic"])
+        #expect(jp[0].categoryTitle == "International (EJU)")
+    }
+
+    @Test func japanMissingIdFallsBackToSystemNorms() throws {
+        let store = try AdmissionsStore(data: sampleData())
+        let rows = store.pathways(forCatalogId: "JP999")
+        #expect(rows.count == 1)
+        #expect(rows[0].pathwayName == "National EJU norm")
+        #expect(store.pathways(forCatalogId: nil).isEmpty)
+    }
+
+    @Test func hongKongMissingIdFallsBackToSystemNorms() throws {
+        let store = try AdmissionsStore(data: sampleData())
+        let fallback = store.pathways(forCatalogId: "HK999")
+        #expect(fallback.map(\.pathwayName) == [
+            "HK system international norm",
+            "HK system local non-JUPAS norm",
+            "HK system JUPAS norm"
+        ])
+        // A school with its own rows must not receive the system fallback.
+        let hku = store.pathways(forCatalogId: "HK001")
+        #expect(hku.count == 2)
+        #expect(hku.map(\.pathwayName).contains("HK system JUPAS norm") == false)
+    }
+
+    @Test func officialHongKongCategoriesTitleAndSort() throws {
+        let json = """
+        {
+          "version": "test",
+          "source": "inline",
+          "generated": "2026-11-12",
+          "pathways_by_id": {
+            "HK013": [
+              {
+                "student_category": "jupas_local",
+                "pathway_name": "SSSDP Year 1 via JUPAS",
+                "exams_required": "HKDSE via JUPAS",
+                "typical_timeline": "JUPAS calendar",
+                "language_requirements": "English",
+                "notes": "",
+                "confidence": "high"
+              },
+              {
+                "student_category": "non_jupas_local",
+                "pathway_name": "Local non-JUPAS",
+                "exams_required": "Direct / E-APP",
+                "typical_timeline": "Autumn",
+                "language_requirements": "English",
+                "notes": "",
+                "confidence": "high"
+              },
+              {
+                "student_category": "international_non_jupas",
+                "pathway_name": "International qualifications",
+                "exams_required": "IB / A-Level",
+                "typical_timeline": "Autumn main round",
+                "language_requirements": "English",
+                "notes": "",
+                "confidence": "high"
+              }
+            ]
+          }
+        }
+        """
+        let store = try AdmissionsStore(data: Data(json.utf8))
+        let rows = store.pathways(forCatalogId: "HK013")
+        #expect(rows.map(\.studentCategory) == [
+            "international_non_jupas",
+            "non_jupas_local",
+            "jupas_local"
+        ])
+        #expect(rows.map(\.categoryTitle) == [
+            "Non-JUPAS / International",
+            "Non-JUPAS (local)",
+            "JUPAS (HKDSE)"
+        ])
+        // Old hardcoded slugs remain mapped for back-compat with earlier samples.
+        let oldSlug = AdmissionPathway(
+            studentCategory: "local_jupas",
+            pathwayName: "JUPAS (HKDSE)",
+            examsRequired: "HKDSE",
+            typicalTimeline: "JUPAS calendar",
+            languageRequirements: "English",
+            notes: "",
+            confidence: "high"
+        )
+        #expect(oldSlug.categoryTitle == "JUPAS (HKDSE)")
+        #expect(oldSlug.categorySortIndex == 2)
+    }
+}
+
+struct RegionAwareTypesTests {
+
+    @Test func hongKongDefaultsPreferJUPAS() {
+        #expect(DeadlineType.defaultType(for: .hongKong) == .jupas)
+        #expect(DeadlineType.suggested(for: .hongKong).first == .jupas)
+        #expect(DocumentType.suggested(for: .hongKong).first == .jupasApplication)
+        #expect(CatalogRegion.resolve(catalogId: "HK001", countryRegion: nil) == .hongKong)
+    }
+
+    @Test func japanDefaultsPreferEJU() {
+        #expect(DeadlineType.defaultType(for: .japan) == .eju)
+        #expect(DeadlineType.suggested(for: .japan).contains(.commonTest))
+        #expect(DocumentType.suggested(for: .japan).first == .personalStatement)
+        #expect(CatalogRegion.resolve(catalogId: "JP001", countryRegion: "Japan") == .japan)
+    }
+
+    @Test func catalogTuitionAndMajorsParse() {
+        let hku = CatalogCollege(
+            id: "HK001",
+            officialEnglishName: "The University of Hong Kong",
+            localNativeName: "香港大學",
+            city: "Hong Kong",
+            countryRegion: "Hong Kong SAR",
+            website: "https://www.hku.hk",
+            type: "Public (UGC-funded)",
+            foundedYear: "1911",
+            qsWurRank: "17",
+            qsRankYear: "QS WUR 2025",
+            tuitionApproxUsd: "~23300",
+            tuitionCurrency: "HKD",
+            majorsFaculties: "Arts; Law; Medicine",
+            admissionsNotes: "Local HKDSE via JUPAS."
+        )
+        #expect(hku.tuitionDisplay == "≈ US$23,300")
+        #expect(hku.majorList == ["Arts", "Law", "Medicine"])
+        #expect(hku.isHongKong)
+        #expect(!hku.isJapan)
+    }
+}
+
+
+struct DeadlineReminderPlanTests {
+
+    @Test func requestIDsAreStableAndCoverAllLeadTimes() {
+        let id = UUID(uuidString: "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE")!
+        #expect(DeadlineReminderPlan.requestIDs(deadlineID: id) == [
+            "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE-30",
+            "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE-7",
+            "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE-1",
+            "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE-0"
+        ])
+        #expect(DeadlineReminderPlan.leadDays == [30, 7, 1, 0])
+        #expect(DeadlineReminderPlan.reminderHour == 9)
+    }
+
+    @Test func titlesNameJUPASAndEJUTypes() {
+        #expect(DeadlineReminderPlan.title(daysBefore: 30, displayTitle: "JUPAS") == "JUPAS in 30 days")
+        #expect(DeadlineReminderPlan.title(daysBefore: 7, displayTitle: "EJU") == "EJU in 1 week")
+        #expect(DeadlineReminderPlan.title(daysBefore: 1, displayTitle: "Non-JUPAS") == "Non-JUPAS is tomorrow")
+        #expect(DeadlineReminderPlan.title(daysBefore: 0, displayTitle: "Common Test") == "Common Test is today")
+        #expect(DeadlineReminderPlan.body(collegeName: "The University of Hong Kong", dateText: "Dec 3, 2026")
+                == "The University of Hong Kong · Dec 3, 2026")
+    }
+
+    @Test func skipsCompletedAndPastFireDates() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let now = calendar.date(from: DateComponents(year: 2026, month: 11, day: 13, hour: 10, minute: 0))!
+
+        let future = calendar.date(from: DateComponents(year: 2026, month: 12, day: 13, hour: 23, minute: 59))!
+        #expect(DeadlineReminderPlan.shouldSchedule(isComplete: false, deadlineDate: future, now: now, calendar: calendar))
+        #expect(DeadlineReminderPlan.upcomingLeadDays(deadlineDate: future, now: now, calendar: calendar) == [30, 7, 1, 0])
+
+        #expect(DeadlineReminderPlan.shouldSchedule(isComplete: true, deadlineDate: future, now: now, calendar: calendar) == false)
+
+        // Before 9:00, both the 1-day and day-of reminders are still schedulable.
+        let morning = calendar.date(from: DateComponents(year: 2026, month: 11, day: 13, hour: 8, minute: 0))!
+        let tomorrow = calendar.date(from: DateComponents(year: 2026, month: 11, day: 14, hour: 23, minute: 59))!
+        #expect(DeadlineReminderPlan.upcomingLeadDays(deadlineDate: tomorrow, now: morning, calendar: calendar) == [1, 0])
+        // After 9:00, the 1-day fire date has passed.
+        #expect(DeadlineReminderPlan.upcomingLeadDays(deadlineDate: tomorrow, now: now, calendar: calendar) == [0])
+
+        // 10:00 is already after the 9:00 day-of fire time.
+        let today = calendar.date(from: DateComponents(year: 2026, month: 11, day: 13, hour: 23, minute: 59))!
+        #expect(DeadlineReminderPlan.upcomingLeadDays(deadlineDate: today, now: now, calendar: calendar).isEmpty)
+        #expect(DeadlineReminderPlan.shouldSchedule(isComplete: false, deadlineDate: today, now: now, calendar: calendar) == false)
+    }
+}
+
+struct StudentCRMMetricsTests {
+
+    @Test func monthBucketsSortChronologicallyNotAlphabetically() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let now = calendar.date(from: DateComponents(year: 2026, month: 11, day: 13))!
+        let dec = calendar.date(from: DateComponents(year: 2026, month: 12, day: 1))!
+        let jan = calendar.date(from: DateComponents(year: 2027, month: 1, day: 15))!
+        let apr = calendar.date(from: DateComponents(year: 2027, month: 4, day: 2))!
+        let past = calendar.date(from: DateComponents(year: 2026, month: 10, day: 1))!
+
+        let buckets = StudentCRMMetrics.deadlinesByMonth(
+            items: [
+                (date: apr, isComplete: false),
+                (date: dec, isComplete: false),
+                (date: jan, isComplete: false),
+                (date: jan, isComplete: false),
+                (date: past, isComplete: false),
+                (date: dec, isComplete: true)
+            ],
+            now: now,
+            calendar: calendar,
+            locale: Locale(identifier: "en_US_POSIX")
+        )
+        #expect(buckets.map(\.month) == [12, 1, 4])
+        #expect(buckets.map(\.count) == [1, 2, 1])
+        #expect(buckets.map(\.label) == ["Dec 2026", "Jan 2027", "Apr 2027"])
+        #expect(StudentCRMMetrics.isOverdue(past, now: now, calendar: calendar))
+        #expect(StudentCRMMetrics.isUpcoming(dec, now: now, calendar: calendar))
+    }
+
+    @Test func documentStatsCountHKAndJapanTypes() {
+        let stats = StudentCRMMetrics.documentStats(from: [
+            (.jupasApplication, 0),
+            (.jupasApplication, 120),
+            (.personalStatement, 500),
+            (.ejuScores, 0),
+            (.transcript, 10)
+        ])
+        #expect(stats.total == 5)
+        #expect(stats.started == 3)
+        #expect(stats.wordCount == 630)
+        #expect(stats.jupasApplications == 2)
+        #expect(stats.personalStatements == 1)
+        #expect(stats.ejuScores == 1)
+    }
+}
