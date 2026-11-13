@@ -319,3 +319,100 @@ struct RegionAwareTypesTests {
         #expect(!hku.isJapan)
     }
 }
+
+
+struct DeadlineReminderPlanTests {
+
+    @Test func requestIDsAreStableAndCoverAllLeadTimes() {
+        let id = UUID(uuidString: "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE")!
+        #expect(DeadlineReminderPlan.requestIDs(deadlineID: id) == [
+            "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE-30",
+            "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE-7",
+            "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE-1",
+            "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE-0"
+        ])
+        #expect(DeadlineReminderPlan.leadDays == [30, 7, 1, 0])
+        #expect(DeadlineReminderPlan.reminderHour == 9)
+    }
+
+    @Test func titlesNameJUPASAndEJUTypes() {
+        #expect(DeadlineReminderPlan.title(daysBefore: 30, displayTitle: "JUPAS") == "JUPAS in 30 days")
+        #expect(DeadlineReminderPlan.title(daysBefore: 7, displayTitle: "EJU") == "EJU in 1 week")
+        #expect(DeadlineReminderPlan.title(daysBefore: 1, displayTitle: "Non-JUPAS") == "Non-JUPAS is tomorrow")
+        #expect(DeadlineReminderPlan.title(daysBefore: 0, displayTitle: "Common Test") == "Common Test is today")
+        #expect(DeadlineReminderPlan.body(collegeName: "The University of Hong Kong", dateText: "Dec 3, 2026")
+                == "The University of Hong Kong · Dec 3, 2026")
+    }
+
+    @Test func skipsCompletedAndPastFireDates() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let now = calendar.date(from: DateComponents(year: 2026, month: 11, day: 13, hour: 10, minute: 0))!
+
+        let future = calendar.date(from: DateComponents(year: 2026, month: 12, day: 13, hour: 23, minute: 59))!
+        #expect(DeadlineReminderPlan.shouldSchedule(isComplete: false, deadlineDate: future, now: now, calendar: calendar))
+        #expect(DeadlineReminderPlan.upcomingLeadDays(deadlineDate: future, now: now, calendar: calendar) == [30, 7, 1, 0])
+
+        #expect(DeadlineReminderPlan.shouldSchedule(isComplete: true, deadlineDate: future, now: now, calendar: calendar) == false)
+
+        // Before 9:00, both the 1-day and day-of reminders are still schedulable.
+        let morning = calendar.date(from: DateComponents(year: 2026, month: 11, day: 13, hour: 8, minute: 0))!
+        let tomorrow = calendar.date(from: DateComponents(year: 2026, month: 11, day: 14, hour: 23, minute: 59))!
+        #expect(DeadlineReminderPlan.upcomingLeadDays(deadlineDate: tomorrow, now: morning, calendar: calendar) == [1, 0])
+        // After 9:00, the 1-day fire date has passed.
+        #expect(DeadlineReminderPlan.upcomingLeadDays(deadlineDate: tomorrow, now: now, calendar: calendar) == [0])
+
+        // 10:00 is already after the 9:00 day-of fire time.
+        let today = calendar.date(from: DateComponents(year: 2026, month: 11, day: 13, hour: 23, minute: 59))!
+        #expect(DeadlineReminderPlan.upcomingLeadDays(deadlineDate: today, now: now, calendar: calendar).isEmpty)
+        #expect(DeadlineReminderPlan.shouldSchedule(isComplete: false, deadlineDate: today, now: now, calendar: calendar) == false)
+    }
+}
+
+struct StudentCRMMetricsTests {
+
+    @Test func monthBucketsSortChronologicallyNotAlphabetically() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let now = calendar.date(from: DateComponents(year: 2026, month: 11, day: 13))!
+        let dec = calendar.date(from: DateComponents(year: 2026, month: 12, day: 1))!
+        let jan = calendar.date(from: DateComponents(year: 2027, month: 1, day: 15))!
+        let apr = calendar.date(from: DateComponents(year: 2027, month: 4, day: 2))!
+        let past = calendar.date(from: DateComponents(year: 2026, month: 10, day: 1))!
+
+        let buckets = StudentCRMMetrics.deadlinesByMonth(
+            items: [
+                (date: apr, isComplete: false),
+                (date: dec, isComplete: false),
+                (date: jan, isComplete: false),
+                (date: jan, isComplete: false),
+                (date: past, isComplete: false),
+                (date: dec, isComplete: true)
+            ],
+            now: now,
+            calendar: calendar,
+            locale: Locale(identifier: "en_US_POSIX")
+        )
+        #expect(buckets.map(\.month) == [12, 1, 4])
+        #expect(buckets.map(\.count) == [1, 2, 1])
+        #expect(buckets.map(\.label) == ["Dec 2026", "Jan 2027", "Apr 2027"])
+        #expect(StudentCRMMetrics.isOverdue(past, now: now, calendar: calendar))
+        #expect(StudentCRMMetrics.isUpcoming(dec, now: now, calendar: calendar))
+    }
+
+    @Test func documentStatsCountHKAndJapanTypes() {
+        let stats = StudentCRMMetrics.documentStats(from: [
+            (.jupasApplication, 0),
+            (.jupasApplication, 120),
+            (.personalStatement, 500),
+            (.ejuScores, 0),
+            (.transcript, 10)
+        ])
+        #expect(stats.total == 5)
+        #expect(stats.started == 3)
+        #expect(stats.wordCount == 630)
+        #expect(stats.jupasApplications == 2)
+        #expect(stats.personalStatements == 1)
+        #expect(stats.ejuScores == 1)
+    }
+}

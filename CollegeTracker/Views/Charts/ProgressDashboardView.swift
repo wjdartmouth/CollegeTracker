@@ -15,23 +15,14 @@ struct ProgressDashboardView: View {
     }
 
     var deadlinesByMonth: [(month: String, count: Int)] {
-        let allDeadlines = colleges.flatMap(\.deadlines).filter { $0.date > .now }
-        var grouped: [String: Int] = [:]
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM"
-        for deadline in allDeadlines {
-            let key = formatter.string(from: deadline.date)
-            grouped[key, default: 0] += 1
-        }
-        return grouped.sorted { $0.key < $1.key }.map { ($0.key, $0.value) }
+        StudentCRMMetrics.deadlinesByMonth(
+            items: colleges.flatMap(\.deadlines).map { (date: $0.date, isComplete: $0.isComplete) }
+        ).map { (month: $0.label, count: $0.count) }
     }
 
-    var essayStats: (total: Int, withFeedback: Int, wordCount: Int) {
-        let essays = colleges.flatMap(\.documents).filter(\.type.supportsAIFeedback)
-        return (
-            essays.count,
-            essays.filter { !$0.feedbackHistory.isEmpty }.count,
-            essays.reduce(0) { $0 + $1.wordCount }
+    var documentStats: StudentCRMMetrics.DocumentStats {
+        StudentCRMMetrics.documentStats(
+            from: colleges.flatMap(\.documents).map { (type: $0.type, wordCount: $0.wordCount) }
         )
     }
 
@@ -73,8 +64,8 @@ struct ProgressDashboardView: View {
                             .padding(.horizontal)
                     }
 
-                    // Essay stats
-                    EssayStatsCard(stats: essayStats)
+                    // Document progress (JUPAS / personal statement / EJU, not essay AI)
+                    DocumentProgressCard(stats: documentStats)
                         .padding(.horizontal)
 
                     // Quick stats grid
@@ -210,50 +201,74 @@ struct DeadlineBarChartCard: View {
     }
 }
 
-// MARK: - Essay Stats Card
+// MARK: - Document Progress Card
 
-struct EssayStatsCard: View {
-    let stats: (total: Int, withFeedback: Int, wordCount: Int)
+struct DocumentProgressCard: View {
+    let stats: StudentCRMMetrics.DocumentStats
 
-    var feedbackRatio: Double {
-        stats.total > 0 ? Double(stats.withFeedback) / Double(stats.total) : 0
+    var startedRatio: Double {
+        stats.total > 0 ? Double(stats.started) / Double(stats.total) : 0
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Label("Essay Progress", systemImage: "doc.text.fill")
+            Label("Document Progress", systemImage: "doc.text.fill")
                 .font(.headline)
 
             HStack(spacing: 0) {
-                EssayStat(value: "\(stats.total)", label: "Essays", color: .blue)
+                DocumentStat(value: "\(stats.total)", label: "Documents", color: .blue)
                 Divider().frame(height: 40)
-                EssayStat(value: "\(stats.withFeedback)", label: "Reviewed", color: .purple)
+                DocumentStat(value: "\(stats.started)", label: "Started", color: .purple)
                 Divider().frame(height: 40)
-                EssayStat(value: "\(stats.wordCount)", label: "Words", color: .green)
+                DocumentStat(value: "\(stats.wordCount)", label: "Words", color: .green)
+            }
+
+            if stats.jupasApplications + stats.personalStatements + stats.ejuScores > 0 {
+                Text(typeSummary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             if stats.total > 0 {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
-                        Text("AI Feedback Coverage")
+                        Text("Started")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Spacer()
-                        Text("\(Int(feedbackRatio * 100))%")
+                        Text("\(Int(startedRatio * 100))%")
                             .font(.caption.bold())
                             .foregroundStyle(.purple)
                     }
-                    ProgressView(value: feedbackRatio)
+                    ProgressView(value: startedRatio)
                         .tint(.purple)
                 }
+            } else {
+                Text("Add a JUPAS application, personal statement, or EJU scores from a school's Documents tab.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
         .padding(20)
         .cardStyle()
     }
+
+    private var typeSummary: String {
+        var parts: [String] = []
+        if stats.jupasApplications > 0 {
+            parts.append("\(stats.jupasApplications) JUPAS")
+        }
+        if stats.personalStatements > 0 {
+            parts.append("\(stats.personalStatements) personal statement\(stats.personalStatements == 1 ? "" : "s")")
+        }
+        if stats.ejuScores > 0 {
+            parts.append("\(stats.ejuScores) EJU")
+        }
+        return parts.joined(separator: " · ")
+    }
 }
 
-struct EssayStat: View {
+struct DocumentStat: View {
     let value: String
     let label: String
     let color: Color
@@ -280,7 +295,7 @@ struct QuickStatsGrid: View {
     var submittedCount: Int { colleges.filter { $0.status == .submitted }.count }
     var overdueCount: Int {
         colleges.flatMap(\.deadlines)
-            .filter { !$0.isComplete && $0.date < .now }.count
+            .filter { !$0.isComplete && StudentCRMMetrics.isOverdue($0.date) }.count
     }
     var completedDeadlines: Int {
         colleges.flatMap(\.deadlines).filter(\.isComplete).count

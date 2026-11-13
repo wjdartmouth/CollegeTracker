@@ -177,6 +177,14 @@ struct DeadlinesSection: View {
         college.deadlines.sorted { $0.date < $1.date }
     }
 
+    private var emptyDeadlineSubtitle: String {
+        switch CatalogRegion.of(college) {
+        case .hongKong: return "Tap + to add a JUPAS or Non-JUPAS deadline"
+        case .japan: return "Tap + to add an EJU, Common Test, or other deadline"
+        case .other: return "Tap + to add a deadline"
+        }
+    }
+
     var body: some View {
         VStack(spacing: 12) {
             HStack {
@@ -193,10 +201,23 @@ struct DeadlinesSection: View {
             .padding(.horizontal)
 
             if sortedDeadlines.isEmpty {
-                EmptyStateView(icon: "calendar.badge.plus", title: "No deadlines", subtitle: "Tap + to add a deadline")
+                EmptyStateView(
+                    icon: "calendar.badge.plus",
+                    title: "No deadlines",
+                    subtitle: emptyDeadlineSubtitle
+                )
             } else {
                 ForEach(sortedDeadlines) { deadline in
                     DeadlineRowView(deadline: deadline, collegeName: college.name)
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                NotificationService.shared.cancelReminders(for: deadline)
+                                context.delete(deadline)
+                                try? context.save()
+                            } label: {
+                                Label("Delete deadline", systemImage: "trash")
+                            }
+                        }
                 }
                 .padding(.horizontal)
             }
@@ -239,9 +260,14 @@ struct DeadlineRowView: View {
                 .foregroundStyle(deadline.urgencyColor)
                 .clipShape(Capsule())
 
-            // Complete toggle
+            // Complete toggle — keep local reminders in sync
             Button {
                 deadline.isComplete.toggle()
+                if deadline.isComplete {
+                    NotificationService.shared.cancelReminders(for: deadline)
+                } else {
+                    NotificationService.shared.scheduleReminders(for: deadline, collegeName: collegeName)
+                }
             } label: {
                 Image(systemName: deadline.isComplete ? "checkmark.circle.fill" : "circle")
                     .foregroundStyle(deadline.isComplete ? .green : .secondary)
@@ -260,6 +286,14 @@ struct DocumentsSection: View {
     @Binding var showAdd: Bool
     @Environment(\.modelContext) private var context
 
+    private var emptyDocumentSubtitle: String {
+        switch CatalogRegion.of(college) {
+        case .hongKong: return "Tap + to add a JUPAS application, personal statement, or school report"
+        case .japan: return "Tap + to add a personal statement, EJU scores, or transcript"
+        case .other: return "Tap + to add a document"
+        }
+    }
+
     var body: some View {
         VStack(spacing: 12) {
             HStack {
@@ -276,7 +310,7 @@ struct DocumentsSection: View {
             .padding(.horizontal)
 
             if college.documents.isEmpty {
-                EmptyStateView(icon: "doc.badge.plus", title: "No documents", subtitle: "Tap + to add essays & files")
+                EmptyStateView(icon: "doc.badge.plus", title: "No documents", subtitle: emptyDocumentSubtitle)
             } else {
                 ForEach(college.documents.sorted { $0.lastEdited > $1.lastEdited }) { doc in
                     NavigationLink(destination: EssayEditorView(document: doc)) {
@@ -404,7 +438,7 @@ struct AddDeadlineView: View {
                 Section {
                     Toggle("Notify me", isOn: $notify)
                     if notify {
-                        Text("You'll be reminded 30 days, 1 week, 1 day, and day-of.")
+                        Text("Local reminders at 9:00 — 30 days, 1 week, 1 day, and the day of the deadline. These are regular notifications, not Critical Alerts.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -462,14 +496,12 @@ struct AddDocumentView: View {
 
                 TextField("Title / Prompt snippet", text: $title)
 
-                if type.supportsAIFeedback {
-                    HStack {
-                        Text("Word Limit")
-                        Spacer()
-                        TextField("Optional", text: $wordLimit)
-                            .multilineTextAlignment(.trailing)
-                            .keyboardType(.numberPad)
-                    }
+                HStack {
+                    Text("Word Limit")
+                    Spacer()
+                    TextField("Optional", text: $wordLimit)
+                        .multilineTextAlignment(.trailing)
+                        .keyboardType(.numberPad)
                 }
             }
             .navigationTitle("Add Document")

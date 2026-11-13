@@ -11,21 +11,19 @@ An advanced iOS 17+ college application management app for students and counselo
 ## ✨ Features
 
 ### For Students
-- **Application dashboard** — Greeting, upcoming deadline carousel, college status board, and stats at a glance
+- **Application dashboard** — Greeting, overdue and upcoming deadline carousels, college status board, and Schools / In Progress / Upcoming stats
 - **College catalog** — Search and add from 839 bundled Hong Kong + Japan schools (college-data: 21 Hong Kong SAR + 818 Japan). Custom entry remains as a fallback.
 - **9 application statuses** — Researching → In Progress → Submitted → Interviewing → Accepted / Waitlisted / Deferred / Rejected → Enrolled
 - **Deadline tracking** — Region-aware types: JUPAS and Non-JUPAS for Hong Kong; EJU, Common Test, Comprehensive (AO), and School Recommendation for Japan; plus scholarship, financial aid, interview, custom, and US ED/EA/RD. Urgency color-coding (red < 7 days, amber < 30 days, green otherwise).
-- **Smart notifications** — Automatic reminders at 30 days, 1 week, 1 day, and day-of for every deadline
+- **Smart notifications** — Local reminders at 9:00, 30 days / 1 week / 1 day / day-of, titled with the deadline type (JUPAS, EJU, etc.). Regular notifications only — no Critical Alerts entitlement. Reminders reschedule when the student tabs appear and cancel when a deadline is completed or deleted.
 - **Document vault** — Region-aware types including JUPAS applications, personal statements, school reports, EJU scores, transcripts, recommendations, and (still available) Common App / supplemental essays.
 - **Essay editor** — Full-screen editor with live word count progress bar and word limit tracking
 - **AI essay feedback** — Claude-powered analysis with score (X/10), strengths, areas to improve, specific suggestions, and encouragement
 - **College comparison** — Side-by-side table for up to 3 schools
-- **Progress charts** — Donut chart of application statuses, quick stats grid
+- **Progress charts** — Donut chart of application statuses, chronological deadlines-by-month, document progress (JUPAS / personal statement / EJU), quick stats grid
 
 ### For Counselors
-- **Multi-student support** — Counselor role with managed student IDs
-- **CloudKit sharing** — Share a student's record zone via the native iOS sharing UI
-- **Same powerful views** — All student features available when viewing a student's profile
+- **Coming soon** — Onboarding offers a Counselor chip marked Coming soon. Existing counselor profiles see a gate screen and can continue as a student. CloudKit student-sharing is deferred; there is no fake local-UUID "iCloud sharing".
 
 ---
 
@@ -54,7 +52,9 @@ CollegeTracker/
 │   ├── AIFeedbackService.swift        Anthropic API integration — structured essay
 │                                       feedback with score parsing (deferred)
 │   ├── CloudKitService.swift          iCloud container `iCloud.edu.asu.jwang875.CollegeTracker`
-│   └── NotificationService.swift      Multi-interval deadline reminders (30d/7d/1d/0d)
+│   ├── NotificationService.swift      Local (non-critical) deadline reminders (30d/7d/1d/0d at 9:00)
+│   ├── DeadlineReminderPlan.swift     Reminder identifiers, titles, and lead-time policy
+│   └── StudentCRMMetrics.swift        Chronological month buckets and document progress stats
 │
 ├── Views/
 │   ├── RootView.swift                 Onboarding flow, role selection, MainTabView
@@ -76,7 +76,7 @@ CollegeTracker/
 │   │                                   structured feedback sections, history log
 │   └── Charts/
 │       └── ProgressDashboardView.swift  Overall progress ring, status donut chart,
-│                                         deadlines-by-month bar chart, essay stats,
+│                                         deadlines-by-month bar chart, document progress,
 │                                         quick stats grid
 │
 └── Shared/
