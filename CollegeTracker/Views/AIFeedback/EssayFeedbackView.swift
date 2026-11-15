@@ -29,7 +29,7 @@ struct EssayFeedbackView: View {
 
                     // Focus area picker
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("What should Claude focus on?")
+                        Text(L10n.tr("What should Claude focus on?"))
                             .font(.headline)
                             .padding(.horizontal)
 
@@ -52,9 +52,9 @@ struct EssayFeedbackView: View {
 
                     // Optional prompt
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Essay prompt (optional)")
+                        Text(L10n.tr("Essay prompt (optional)"))
                             .font(.subheadline.bold())
-                        TextField("Paste the prompt here for better feedback...", text: $promptText, axis: .vertical)
+                        TextField(L10n.tr("Paste the prompt here for better feedback..."), text: $promptText, axis: .vertical)
                             .lineLimit(3...6)
                             .padding(12)
                             .background(Color(.systemGray6))
@@ -74,7 +74,7 @@ struct EssayFeedbackView: View {
                             } else {
                                 Image(systemName: "sparkles")
                             }
-                            Text(isLoading ? "Analyzing..." : "Get AI Feedback")
+                            Text(isLoading ? L10n.tr("Analyzing...") : L10n.tr("Get AI Feedback"))
                                 .font(.headline)
                         }
                         .frame(maxWidth: .infinity)
@@ -110,7 +110,7 @@ struct EssayFeedbackView: View {
                                 showHistory.toggle()
                             } label: {
                                 HStack {
-                                    Text("Feedback History (\(document.feedbackHistory.count))")
+                                    Text(L10n.format("Feedback History (%lld)", document.feedbackHistory.count))
                                         .font(.headline)
                                     Spacer()
                                     Image(systemName: showHistory ? "chevron.up" : "chevron.down")
@@ -130,11 +130,11 @@ struct EssayFeedbackView: View {
                 }
                 .padding(.vertical)
             }
-            .navigationTitle("AI Feedback")
+            .navigationTitle(L10n.tr("AI Feedback"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                    Button(L10n.tr("Done")) { dismiss() }
                 }
             }
         }
@@ -188,10 +188,10 @@ struct EssaySummaryCard: View {
                     .lineLimit(1)
                 HStack {
                     if let limit = document.wordLimit {
-                        Text("\(document.wordCount) / \(limit) words")
+                        Text(L10n.format("%lld / %lld words", document.wordCount, limit))
                             .foregroundStyle(document.wordCountStatus.color)
                     } else {
-                        Text("\(document.wordCount) words")
+                        Text(L10n.format("%lld words", document.wordCount))
                             .foregroundStyle(.secondary)
                     }
                     if let college = document.college {
@@ -219,7 +219,7 @@ struct FocusAreaChip: View {
             HStack(spacing: 6) {
                 Image(systemName: area.icon)
                     .font(.caption)
-                Text(area.rawValue)
+                Text(area.localizedTitle)
                     .font(.caption.bold())
             }
             .padding(.horizontal, 14)
@@ -246,9 +246,9 @@ struct FeedbackResultView: View {
             // Score header
             HStack {
                 VStack(alignment: .leading) {
-                    Text("AI Feedback")
+                    Text(L10n.tr("AI Feedback"))
                         .font(.headline)
-                    Text(feedback.focusArea + " · " + feedback.createdAt.shortFormatted)
+                    Text(L10n.tr(feedback.focusArea) + " · " + feedback.createdAt.shortFormatted)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -261,19 +261,19 @@ struct FeedbackResultView: View {
             if expanded {
                 // Strengths
                 if !parsed.strengths.isEmpty {
-                    FeedbackSection(title: "Strengths", icon: "hand.thumbsup.fill",
+                    FeedbackSection(title: L10n.tr("Strengths"), icon: "hand.thumbsup.fill",
                                     color: .green, items: parsed.strengths)
                 }
 
                 // Improvements
                 if !parsed.improvements.isEmpty {
-                    FeedbackSection(title: "Areas to Improve", icon: "arrow.up.circle.fill",
+                    FeedbackSection(title: L10n.tr("Areas to Improve"), icon: "arrow.up.circle.fill",
                                     color: .orange, items: parsed.improvements)
                 }
 
                 // Suggestions
                 if !parsed.suggestions.isEmpty {
-                    FeedbackSection(title: "Specific Suggestions", icon: "pencil.circle.fill",
+                    FeedbackSection(title: L10n.tr("Specific Suggestions"), icon: "pencil.circle.fill",
                                     color: .blue, items: parsed.suggestions)
                 }
 
@@ -295,7 +295,7 @@ struct FeedbackResultView: View {
             Button {
                 withAnimation(.spring(duration: 0.3)) { expanded.toggle() }
             } label: {
-                Text(expanded ? "Collapse" : "Expand")
+                Text(expanded ? L10n.tr("Collapse") : L10n.tr("Expand"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -366,9 +366,9 @@ struct FeedbackHistoryCard: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(feedback.focusArea)
+                Text(L10n.tr(feedback.focusArea))
                     .font(.subheadline.bold())
-                Text(feedback.createdAt.mediumFormatted + " · \(feedback.wordCountAtTime) words")
+                Text(feedback.createdAt.mediumFormatted + " · " + L10n.format("%lld words", feedback.wordCountAtTime))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

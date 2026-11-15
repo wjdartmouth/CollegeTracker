@@ -39,12 +39,26 @@ struct AdmissionPathway: Codable, Hashable, Identifiable, Sendable {
         }
     }
 
+    /// Localized display of `categoryTitle` (the English string is the catalog key).
+    var localizedCategoryTitle: String { L10n.tr(categoryTitle) }
+
     var confidenceTitle: String {
         switch confidence.lowercased() {
         case "high": return "High confidence"
         case "medium": return "Medium confidence"
         case "low": return "Low confidence"
         default: return confidence.capitalized
+        }
+    }
+
+    var localizedConfidence: String {
+        switch confidence.lowercased() {
+        case "high": return L10n.tr("High")
+        case "medium": return L10n.tr("Medium")
+        case "low": return L10n.tr("Low")
+        default:
+            let trimmed = confidence.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? trimmed : trimmed.capitalized
         }
     }
 

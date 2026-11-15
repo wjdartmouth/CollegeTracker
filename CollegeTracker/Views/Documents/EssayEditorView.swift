@@ -36,7 +36,7 @@ struct EssayEditorView: View {
                     Button {
                         showFeedback = true
                     } label: {
-                        Label("AI Feedback", systemImage: "sparkles")
+                        Label(L10n.tr("AI Feedback"), systemImage: "sparkles")
                     }
                     .disabled(document.content.isEmpty)
                 }
@@ -73,7 +73,7 @@ struct WordCountBar: View {
     var body: some View {
         VStack(spacing: 6) {
             HStack {
-                Label(document.type.rawValue, systemImage: document.type.icon)
+                Label(document.type.localizedTitle, systemImage: document.type.icon)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -81,10 +81,10 @@ struct WordCountBar: View {
                     if let limit = document.wordLimit {
                         Text("\(document.wordCount)")
                             .foregroundStyle(document.wordCountStatus.color) +
-                        Text(" / \(limit) words")
+                        Text(L10n.format(" / %lld words", limit))
                             .foregroundStyle(.secondary)
                     } else {
-                        Text("\(document.wordCount) words")
+                        Text(L10n.format("%lld words", document.wordCount))
                             .foregroundStyle(.secondary)
                     }
                 }

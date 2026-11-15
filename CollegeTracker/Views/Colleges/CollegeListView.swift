@@ -64,12 +64,12 @@ struct CollegeListView: View {
                     }
                 }
                 .listStyle(.plain)
-                .searchable(text: $searchText, prompt: "Search colleges")
+                .searchable(text: $searchText, prompt: L10n.tr("Search colleges"))
             }
-            .navigationTitle("Colleges (\(profile.colleges.count))")
+            .navigationTitle(L10n.format("Colleges (%lld)", profile.colleges.count))
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(isCompareMode ? "Done" : "Compare") {
+                    Button(isCompareMode ? L10n.tr("Done") : L10n.tr("Compare")) {
                         isCompareMode.toggle()
                         if !isCompareMode { compareSelection.removeAll() }
                     }
@@ -81,6 +81,7 @@ struct CollegeListView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
+                    .accessibilityLabel(L10n.tr("Add College"))
                 }
             }
             .overlay(alignment: .bottom) {
@@ -120,11 +121,11 @@ struct StatusFilterBar: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                FilterChip(label: "All", color: .blue, selected: selected == nil) {
+                FilterChip(label: L10n.tr("All"), color: .blue, selected: selected == nil) {
                     selected = nil
                 }
                 ForEach(ApplicationStatus.allCases) { status in
-                    FilterChip(label: status.rawValue, color: status.color,
+                    FilterChip(label: status.localizedTitle, color: status.color,
                                 selected: selected == status) {
                         selected = selected == status ? nil : status
                     }
@@ -165,7 +166,7 @@ struct CompareButton: View {
         Button(action: action) {
             HStack {
                 Image(systemName: "arrow.left.arrow.right")
-                Text("Compare \(count) Schools")
+                Text(L10n.format("Compare %lld Schools", count))
                     .font(.headline)
             }
             .padding(.horizontal, 32)
@@ -247,16 +248,16 @@ struct AddCollegeView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button(L10n.tr("Cancel")) { dismiss() }
                 }
                 if phase == .details {
                     ToolbarItem(placement: .topBarLeading) {
-                        Button("Back") {
+                        Button(L10n.tr("Back")) {
                             phase = .pick
                         }
                     }
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("Add") { save() }
+                        Button(L10n.tr("Add")) { save() }
                             .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isDuplicate)
                     }
                 }
@@ -266,79 +267,80 @@ struct AddCollegeView: View {
 
     private var detailsForm: some View {
         Form {
-            Section("School Info") {
+            Section(L10n.tr("School Info")) {
                 if let selectedCatalog {
                     CatalogCollegeRow(college: selectedCatalog, alreadyAdded: isDuplicate)
-                    LabeledContent("Catalog ID", value: selectedCatalog.id)
+                    LabeledContent(L10n.tr("Catalog ID"), value: selectedCatalog.id)
                     if !selectedCatalog.locationLine.isEmpty {
-                        LabeledContent("Location", value: selectedCatalog.locationLine)
+                        LabeledContent(L10n.tr("Location"), value: selectedCatalog.localizedLocationLine)
                     }
                 } else {
-                    TextField("College name", text: $name)
-                    Text("This school is not in the bundled HK + Japan catalog.")
+                    TextField(L10n.tr("College name"), text: $name)
+                    Text(L10n.tr("This school is not in the bundled HK + Japan catalog."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
-                Picker("Status", selection: $status) {
+                Picker(L10n.tr("Status"), selection: $status) {
                     ForEach(ApplicationStatus.allCases) { s in
-                        Label(s.rawValue, systemImage: s.icon).tag(s)
+                        Label(s.localizedTitle, systemImage: s.icon).tag(s)
                     }
                 }
             }
 
             if isDuplicate {
                 Section {
-                    Text("This school is already on your list.")
+                    Text(L10n.tr("This school is already on your list."))
                         .font(.caption)
                         .foregroundStyle(.red)
                 }
             }
 
-            Section("Details (optional)") {
+            Section(L10n.tr("Details (optional)")) {
                 HStack {
-                    Text("Acceptance Rate")
+                    Text(L10n.tr("Acceptance Rate"))
                     Spacer()
-                    TextField("e.g. 8.7", text: $acceptanceRate)
+                    TextField(L10n.tr("e.g. 8.7"), text: $acceptanceRate)
                         .multilineTextAlignment(.trailing)
                         .keyboardType(.decimalPad)
                     Text("%").foregroundStyle(.secondary)
                 }
                 HStack {
-                    Text("QS Rank")
+                    Text(L10n.tr("QS Rank"))
                     Spacer()
-                    TextField("e.g. 17", text: $ranking)
+                    TextField(L10n.tr("e.g. 17"), text: $ranking)
                         .multilineTextAlignment(.trailing)
                         .keyboardType(.numberPad)
                 }
                 if let selectedCatalog, let qs = selectedCatalog.qsRankDisplay, Int(qs) == nil {
-                    Text("Catalog QS: \(qs)")
+                    let shown = (qs.hasPrefix("Not") || qs.hasPrefix("Unlisted")) ? L10n.tr("Not in QS") : qs
+                    Text(L10n.format("Catalog QS: %@", shown))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                TextField("Application portal URL", text: $portalURL)
+                TextField(L10n.tr("Application portal URL"), text: $portalURL)
                     .keyboardType(.URL)
                     .textInputAutocapitalization(.never)
             }
 
-            Section("First Deadline") {
-                Toggle("Add a deadline", isOn: $addDeadline)
+            Section(L10n.tr("First Deadline")) {
+                Toggle(L10n.tr("Add a deadline"), isOn: $addDeadline)
                 if addDeadline {
-                    Picker("Type", selection: $deadlineType) {
+                    Picker(L10n.tr("Type"), selection: $deadlineType) {
                         ForEach(deadlineTypeChoices) { t in
-                            Text(t.rawValue).tag(t)
+                            Text(t.localizedTitle).tag(t)
                         }
                     }
-                    DatePicker("Date", selection: $deadlineDate, displayedComponents: .date)
+                    DatePicker(L10n.tr("Date"), selection: $deadlineDate, displayedComponents: .date)
                 }
             }
 
-            Section("Notes") {
+            Section(L10n.tr("Notes")) {
                 TextEditor(text: $notes)
                     .frame(minHeight: 80)
             }
         }
-        .navigationTitle("Add College")
+        .navigationTitle(L10n.tr("Add College"))
         .navigationBarTitleDisplayMode(.inline)
     }
 

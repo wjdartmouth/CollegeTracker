@@ -74,7 +74,7 @@ struct ProgressDashboardView: View {
                 }
                 .padding(.vertical)
             }
-            .navigationTitle("Progress")
+            .navigationTitle(L10n.tr("Progress"))
         }
     }
 }
@@ -103,16 +103,16 @@ struct OverallProgressCard: View {
                 VStack(spacing: 2) {
                     Text("\(Int(progress * 100))%")
                         .font(.title3.bold())
-                    Text("Done")
+                    Text(L10n.tr("Done"))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Overall Progress")
+                Text(L10n.tr("Overall Progress"))
                     .font(.headline)
-                Text("Tracking \(collegeCount) school\(collegeCount == 1 ? "" : "s")")
+                Text(L10n.plural(collegeCount, one: "Tracking %lld school", other: "Tracking %lld schools"))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 ProgressView(value: progress)
@@ -131,13 +131,13 @@ struct StatusDonutCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Application Status")
+            Text(L10n.tr("Application Status"))
                 .font(.headline)
 
             HStack(alignment: .center, spacing: 20) {
                 Chart(data, id: \.status) { item in
                     SectorMark(
-                        angle: .value("Count", item.count),
+                        angle: .value(L10n.tr("Count"), item.count),
                         innerRadius: .ratio(0.55),
                         angularInset: 2
                     )
@@ -153,7 +153,7 @@ struct StatusDonutCard: View {
                             Circle()
                                 .fill(item.status.color)
                                 .frame(width: 10, height: 10)
-                            Text(item.status.rawValue)
+                            Text(item.status.localizedTitle)
                                 .font(.caption)
                             Spacer()
                             Text("\(item.count)")
@@ -175,13 +175,13 @@ struct DeadlineBarChartCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Upcoming Deadlines by Month")
+            Text(L10n.tr("Upcoming Deadlines by Month"))
                 .font(.headline)
 
             Chart(data, id: \.month) { item in
                 BarMark(
-                    x: .value("Month", item.month),
-                    y: .value("Deadlines", item.count)
+                    x: .value(L10n.tr("Month"), item.month),
+                    y: .value(L10n.tr("Deadlines"), item.count)
                 )
                 .foregroundStyle(
                     LinearGradient(colors: [.blue, .purple], startPoint: .bottom, endPoint: .top)
@@ -212,15 +212,15 @@ struct DocumentProgressCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Label("Document Progress", systemImage: "doc.text.fill")
+            Label(L10n.tr("Document Progress"), systemImage: "doc.text.fill")
                 .font(.headline)
 
             HStack(spacing: 0) {
-                DocumentStat(value: "\(stats.total)", label: "Documents", color: .blue)
+                DocumentStat(value: "\(stats.total)", label: L10n.tr("Documents"), color: .blue)
                 Divider().frame(height: 40)
-                DocumentStat(value: "\(stats.started)", label: "Started", color: .purple)
+                DocumentStat(value: "\(stats.started)", label: L10n.tr("Started"), color: .purple)
                 Divider().frame(height: 40)
-                DocumentStat(value: "\(stats.wordCount)", label: "Words", color: .green)
+                DocumentStat(value: "\(stats.wordCount)", label: L10n.tr("Words"), color: .green)
             }
 
             if stats.jupasApplications + stats.personalStatements + stats.ejuScores > 0 {
@@ -232,7 +232,7 @@ struct DocumentProgressCard: View {
             if stats.total > 0 {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
-                        Text("Started")
+                        Text(L10n.tr("Started"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Spacer()
@@ -244,7 +244,7 @@ struct DocumentProgressCard: View {
                         .tint(.purple)
                 }
             } else {
-                Text("Add a JUPAS application, personal statement, or EJU scores from a school's Documents tab.")
+                Text(L10n.tr("Add a JUPAS application, personal statement, or EJU scores from a school's Documents tab."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -256,13 +256,17 @@ struct DocumentProgressCard: View {
     private var typeSummary: String {
         var parts: [String] = []
         if stats.jupasApplications > 0 {
-            parts.append("\(stats.jupasApplications) JUPAS")
+            parts.append(L10n.format("%lld JUPAS", stats.jupasApplications))
         }
         if stats.personalStatements > 0 {
-            parts.append("\(stats.personalStatements) personal statement\(stats.personalStatements == 1 ? "" : "s")")
+            parts.append(L10n.plural(
+                stats.personalStatements,
+                one: "%lld personal statement",
+                other: "%lld personal statements"
+            ))
         }
         if stats.ejuScores > 0 {
-            parts.append("\(stats.ejuScores) EJU")
+            parts.append(L10n.format("%lld EJU", stats.ejuScores))
         }
         return parts.joined(separator: " · ")
     }
@@ -303,13 +307,13 @@ struct QuickStatsGrid: View {
 
     var body: some View {
         LazyVGrid(columns: [.init(.flexible()), .init(.flexible())], spacing: 12) {
-            QuickStat(value: acceptedCount, label: "Accepted / Enrolled",
+            QuickStat(value: acceptedCount, label: L10n.tr("Accepted / Enrolled"),
                       icon: "checkmark.seal.fill", color: .green)
-            QuickStat(value: submittedCount, label: "Submitted",
+            QuickStat(value: submittedCount, label: L10n.tr("Submitted"),
                       icon: "paperplane.fill", color: .purple)
-            QuickStat(value: completedDeadlines, label: "Deadlines Met",
+            QuickStat(value: completedDeadlines, label: L10n.tr("Deadlines Met"),
                       icon: "calendar.badge.checkmark", color: .blue)
-            QuickStat(value: overdueCount, label: "Overdue",
+            QuickStat(value: overdueCount, label: L10n.tr("Overdue"),
                       icon: "exclamationmark.circle.fill", color: overdueCount > 0 ? .red : .secondary)
         }
     }

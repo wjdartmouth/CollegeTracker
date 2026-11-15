@@ -32,7 +32,7 @@ class CloudKitService: ObservableObject {
         _ = try await container.privateCloudDatabase.save(zone)
 
         let share = CKShare(recordZoneID: zoneID)
-        share[CKShare.SystemFieldKey.title] = "\(studentName)'s College Applications"
+        share[CKShare.SystemFieldKey.title] = L10n.format("%@'s College Applications", studentName)
         share.publicPermission = .readOnly
 
         _ = try await container.privateCloudDatabase.save(share)

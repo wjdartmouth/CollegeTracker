@@ -24,14 +24,16 @@ enum FocusArea: String, CaseIterable, Identifiable {
         }
     }
 
+    var localizedTitle: String { L10n.tr(rawValue) }
+
     var description: String {
         switch self {
-        case .overall:     return "Comprehensive feedback on all aspects"
-        case .structure:   return "How well the essay flows and is organized"
-        case .voice:       return "Whether your unique personality comes through"
-        case .prompt:      return "How well you answered the prompt"
-        case .grammar:     return "Grammatical correctness and writing style"
-        case .conciseness: return "Trimming unnecessary words and improving impact"
+        case .overall:     return L10n.tr("Comprehensive feedback on all aspects")
+        case .structure:   return L10n.tr("How well the essay flows and is organized")
+        case .voice:       return L10n.tr("Whether your unique personality comes through")
+        case .prompt:      return L10n.tr("How well you answered the prompt")
+        case .grammar:     return L10n.tr("Grammatical correctness and writing style")
+        case .conciseness: return L10n.tr("Trimming unnecessary words and improving impact")
         }
     }
 }
@@ -126,7 +128,7 @@ class AIFeedbackService {
 
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
-            throw AIError.apiError("Server returned an error. Check your API key.")
+            throw AIError.apiError(L10n.tr("Server returned an error. Check your API key."))
         }
 
         let decoded = try JSONDecoder().decode(AnthropicResponse.self, from: data)
@@ -199,7 +201,7 @@ enum AIError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .apiError(let msg): return msg
-        case .parseError: return "Could not parse AI response."
+        case .parseError: return L10n.tr("Could not parse AI response.")
         }
     }
 }

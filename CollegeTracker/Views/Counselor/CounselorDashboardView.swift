@@ -24,8 +24,8 @@ struct CounselorDashboardView: View {
                 if managedStudents.isEmpty {
                     EmptyStateView(
                         icon: "person.2.fill",
-                        title: "No students yet",
-                        subtitle: "Tap + to add your first student"
+                        title: L10n.tr("No students yet"),
+                        subtitle: L10n.tr("Tap + to add your first student")
                     )
                 } else {
                     List {
@@ -41,12 +41,13 @@ struct CounselorDashboardView: View {
                     .listStyle(.plain)
                 }
             }
-            .navigationTitle("My Students")
+            .navigationTitle(L10n.tr("My Students"))
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showAddStudent = true } label: {
                         Image(systemName: "plus")
                     }
+                    .accessibilityLabel(L10n.tr("Add Student"))
                 }
             }
             .sheet(isPresented: $showAddStudent) {
@@ -109,7 +110,7 @@ struct StudentRowView: View {
                     }
                     .foregroundStyle(next.deadline.urgencyColor)
                 } else {
-                    Text("\(colleges.count) school\(colleges.count == 1 ? "" : "s") tracked")
+                    Text(L10n.plural(colleges.count, one: "%lld school tracked", other: "%lld schools tracked"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -148,21 +149,21 @@ struct AddStudentView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Student Info") {
-                    TextField("Student name", text: $name)
+                Section(L10n.tr("Student Info")) {
+                    TextField(L10n.tr("Student name"), text: $name)
                 }
                 Section {
-                    Text("Counselor sharing is not available yet. This would only create a local profile on this device — CloudKit student sharing is deferred.")
+                    Text(L10n.tr("Counselor sharing is not available yet. This would only create a local profile on this device — CloudKit student sharing is deferred."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
-            .navigationTitle("Add Student")
+            .navigationTitle(L10n.tr("Add Student"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button(L10n.tr("Cancel")) { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Add") { save() }
+                    Button(L10n.tr("Add")) { save() }
                         .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
@@ -218,20 +219,20 @@ struct StudentDetailView: View {
 
                 if !upcomingDeadlines.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {
-                        SectionHeader(title: "Upcoming Deadlines", icon: "calendar.badge.clock")
+                        SectionHeader(title: L10n.tr("Upcoming Deadlines"), icon: "calendar.badge.clock")
                             .padding(.horizontal)
                         DeadlineTimelineView(items: upcomingDeadlines)
                     }
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
-                    SectionHeader(title: "Colleges (\(colleges.count))", icon: "building.columns")
+                    SectionHeader(title: L10n.format("Colleges (%lld)", colleges.count), icon: "building.columns")
                         .padding(.horizontal)
                     if colleges.isEmpty {
                         EmptyStateView(
                             icon: "building.columns",
-                            title: "No colleges added",
-                            subtitle: "The student hasn't added any schools yet"
+                            title: L10n.tr("No colleges added"),
+                            subtitle: L10n.tr("The student hasn't added any schools yet")
                         )
                     } else {
                         LazyVStack(spacing: 10) {
@@ -245,7 +246,7 @@ struct StudentDetailView: View {
 
                 if !essays.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {
-                        SectionHeader(title: "Essays (\(essays.count))", icon: "doc.text.fill")
+                        SectionHeader(title: L10n.format("Essays (%lld)", essays.count), icon: "doc.text.fill")
                             .padding(.horizontal)
                         LazyVStack(spacing: 8) {
                             ForEach(essays) { doc in
@@ -284,14 +285,14 @@ struct StudentHeaderCard: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text(student.name)
                     .font(.title2.bold())
-                Text("Added \(student.createdAt.mediumFormatted)")
+                Text(L10n.format("Added %@", student.createdAt.mediumFormatted))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 HStack(spacing: 12) {
-                    Label("\(collegeCount) school\(collegeCount == 1 ? "" : "s")", systemImage: "building.columns.fill")
+                    Label(L10n.plural(collegeCount, one: "%lld school", other: "%lld schools"), systemImage: "building.columns.fill")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Label("\(Int(progress * 100))% complete", systemImage: "chart.pie.fill")
+                    Label(L10n.format("%lld%% complete", Int(progress * 100)), systemImage: "chart.pie.fill")
                         .font(.caption)
                         .foregroundStyle(.blue)
                 }
@@ -329,7 +330,7 @@ struct CounselorCollegeRowView: View {
                     }
                     .foregroundStyle(deadline.urgencyColor)
                 } else {
-                    Text("No upcoming deadlines")
+                    Text(L10n.tr("No upcoming deadlines"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -339,7 +340,7 @@ struct CounselorCollegeRowView: View {
 
             HStack(spacing: 4) {
                 Image(systemName: college.status.icon).font(.caption2)
-                Text(college.status.rawValue).font(.caption2.bold())
+                Text(college.status.localizedTitle).font(.caption2.bold())
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
@@ -369,11 +370,11 @@ struct CounselorEssayRowView: View {
                     .font(.subheadline.bold())
                     .lineLimit(1)
                 HStack(spacing: 8) {
-                    Text("\(document.wordCount) words")
+                    Text(L10n.format("%lld words", document.wordCount))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     if !document.feedbackHistory.isEmpty {
-                        Label("\(document.feedbackHistory.count) AI feedback", systemImage: "sparkles")
+                        Label(L10n.format("%lld AI feedback", document.feedbackHistory.count), systemImage: "sparkles")
                             .font(.caption)
                             .foregroundStyle(.purple)
                     }
@@ -441,9 +442,9 @@ struct CounselorOverviewView: View {
                 VStack(spacing: 20) {
                     // Summary stats
                     HStack(spacing: 12) {
-                        StatCard(value: managedStudents.count, label: "Students", icon: "person.2.fill", color: .blue)
-                        StatCard(value: allColleges.count, label: "Schools", icon: "building.columns.fill", color: .purple)
-                        StatCard(value: overdueCount, label: "Overdue", icon: "exclamationmark.circle.fill",
+                        StatCard(value: managedStudents.count, label: L10n.tr("Students"), icon: "person.2.fill", color: .blue)
+                        StatCard(value: allColleges.count, label: L10n.tr("Schools"), icon: "building.columns.fill", color: .purple)
+                        StatCard(value: overdueCount, label: L10n.tr("Overdue"), icon: "exclamationmark.circle.fill",
                                  color: overdueCount > 0 ? .red : .secondary)
                     }
                     .padding(.horizontal)
@@ -451,7 +452,7 @@ struct CounselorOverviewView: View {
                     // Upcoming deadlines across all students
                     if !upcomingDeadlines.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "All Upcoming Deadlines", icon: "calendar.badge.clock")
+                            SectionHeader(title: L10n.tr("All Upcoming Deadlines"), icon: "calendar.badge.clock")
                                 .padding(.horizontal)
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 12) {
@@ -473,11 +474,11 @@ struct CounselorOverviewView: View {
                     // Status breakdown across all students
                     if !statusBreakdown.isEmpty {
                         VStack(alignment: .leading, spacing: 16) {
-                            SectionHeader(title: "Applications by Status", icon: "chart.pie.fill")
+                            SectionHeader(title: L10n.tr("Applications by Status"), icon: "chart.pie.fill")
                             HStack(alignment: .center, spacing: 20) {
                                 Chart(statusBreakdown, id: \.status) { item in
                                     SectorMark(
-                                        angle: .value("Count", item.count),
+                                        angle: .value(L10n.tr("Count"), item.count),
                                         innerRadius: .ratio(0.55),
                                         angularInset: 2
                                     )
@@ -489,7 +490,7 @@ struct CounselorOverviewView: View {
                                     ForEach(statusBreakdown, id: \.status) { item in
                                         HStack(spacing: 8) {
                                             Circle().fill(item.status.color).frame(width: 10, height: 10)
-                                            Text(item.status.rawValue).font(.caption)
+                                            Text(item.status.localizedTitle).font(.caption)
                                             Spacer()
                                             Text("\(item.count)").font(.caption.bold())
                                         }
@@ -505,14 +506,14 @@ struct CounselorOverviewView: View {
                     if managedStudents.isEmpty {
                         EmptyStateView(
                             icon: "chart.pie",
-                            title: "No data yet",
-                            subtitle: "Add students from the Students tab to see their progress here"
+                            title: L10n.tr("No data yet"),
+                            subtitle: L10n.tr("Add students from the Students tab to see their progress here")
                         )
                     }
                 }
                 .padding(.vertical)
             }
-            .navigationTitle("Overview")
+            .navigationTitle(L10n.tr("Overview"))
         }
     }
 }

@@ -17,11 +17,11 @@ struct CollegeDetailView: View {
                 CollegeHeaderCard(college: college)
 
                 // Tabs
-                Picker("Section", selection: $selectedTab) {
-                    Text("Pathways").tag(0)
-                    Text("Deadlines").tag(1)
-                    Text("Documents").tag(2)
-                    Text("Notes").tag(3)
+                Picker(L10n.tr("Section"), selection: $selectedTab) {
+                    Text(L10n.tr("Pathways")).tag(0)
+                    Text(L10n.tr("Deadlines")).tag(1)
+                    Text(L10n.tr("Documents")).tag(2)
+                    Text(L10n.tr("Notes")).tag(3)
                 }
                 .pickerStyle(.segmented)
                 .padding(.horizontal)
@@ -46,13 +46,13 @@ struct CollegeDetailView: View {
                             UIApplication.shared.open(url)
                         }
                     } label: {
-                        Label("Open Portal", systemImage: "safari")
+                        Label(L10n.tr("Open Portal"), systemImage: "safari")
                     }
                     .disabled(college.portalURL == nil)
 
-                    Picker("Status", selection: $college.status) {
+                    Picker(L10n.tr("Status"), selection: $college.status) {
                         ForEach(ApplicationStatus.allCases) { s in
-                            Label(s.rawValue, systemImage: s.icon).tag(s)
+                            Label(s.localizedTitle, systemImage: s.icon).tag(s)
                         }
                     }
                 } label: {
@@ -95,7 +95,7 @@ struct CollegeHeaderCard: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
-            if let location = college.locationLine {
+            if let location = college.localizedLocationLine {
                 Text(location)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -107,13 +107,13 @@ struct CollegeHeaderCard: View {
                     Button {
                         college.status = status
                     } label: {
-                        Label(status.rawValue, systemImage: status.icon)
+                        Label(status.localizedTitle, systemImage: status.icon)
                     }
                 }
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: college.status.icon)
-                    Text(college.status.rawValue)
+                    Text(college.status.localizedTitle)
                     Image(systemName: "chevron.down")
                         .font(.caption)
                 }
@@ -132,19 +132,19 @@ struct CollegeHeaderCard: View {
                         VStack {
                             Text("\(rate, specifier: "%.1f")%")
                                 .font(.headline.bold())
-                            Text("Accept Rate")
+                            Text(L10n.tr("Accept Rate"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
                     }
-                    if let rank = college.rankDisplay {
+                    if let rank = college.localizedRankDisplay {
                         VStack {
                             Text(rank)
                                 .font(.headline.bold())
                                 .lineLimit(2)
                                 .minimumScaleFactor(0.7)
                                 .multilineTextAlignment(.center)
-                            Text("QS Rank")
+                            Text(L10n.tr("QS Rank"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -152,7 +152,7 @@ struct CollegeHeaderCard: View {
                     VStack {
                         Text("\(college.documents.count)")
                             .font(.headline.bold())
-                        Text("Docs")
+                        Text(L10n.tr("Docs"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -179,16 +179,16 @@ struct DeadlinesSection: View {
 
     private var emptyDeadlineSubtitle: String {
         switch CatalogRegion.of(college) {
-        case .hongKong: return "Tap + to add a JUPAS or Non-JUPAS deadline"
-        case .japan: return "Tap + to add an EJU, Common Test, or other deadline"
-        case .other: return "Tap + to add a deadline"
+        case .hongKong: return L10n.tr("Tap + to add a JUPAS or Non-JUPAS deadline")
+        case .japan: return L10n.tr("Tap + to add an EJU, Common Test, or other deadline")
+        case .other: return L10n.tr("Tap + to add a deadline")
         }
     }
 
     var body: some View {
         VStack(spacing: 12) {
             HStack {
-                Text("Deadlines")
+                Text(L10n.tr("Deadlines"))
                     .font(.headline)
                 Spacer()
                 Button {
@@ -197,13 +197,14 @@ struct DeadlinesSection: View {
                     Image(systemName: "plus.circle.fill")
                         .foregroundStyle(.blue)
                 }
+                .accessibilityLabel(L10n.tr("Add deadline"))
             }
             .padding(.horizontal)
 
             if sortedDeadlines.isEmpty {
                 EmptyStateView(
                     icon: "calendar.badge.plus",
-                    title: "No deadlines",
+                    title: L10n.tr("No deadlines"),
                     subtitle: emptyDeadlineSubtitle
                 )
             } else {
@@ -215,7 +216,7 @@ struct DeadlinesSection: View {
                                 context.delete(deadline)
                                 try? context.save()
                             } label: {
-                                Label("Delete deadline", systemImage: "trash")
+                                Label(L10n.tr("Delete deadline"), systemImage: "trash")
                             }
                         }
                 }
@@ -273,6 +274,7 @@ struct DeadlineRowView: View {
                     .foregroundStyle(deadline.isComplete ? .green : .secondary)
                     .contentTransition(.symbolEffect(.replace))
             }
+            .accessibilityLabel(deadline.isComplete ? L10n.tr("Mark incomplete") : L10n.tr("Mark complete"))
         }
         .padding(14)
         .cardStyle()
@@ -288,16 +290,16 @@ struct DocumentsSection: View {
 
     private var emptyDocumentSubtitle: String {
         switch CatalogRegion.of(college) {
-        case .hongKong: return "Tap + to add a JUPAS application, personal statement, or school report"
-        case .japan: return "Tap + to add a personal statement, EJU scores, or transcript"
-        case .other: return "Tap + to add a document"
+        case .hongKong: return L10n.tr("Tap + to add a JUPAS application, personal statement, or school report")
+        case .japan: return L10n.tr("Tap + to add a personal statement, EJU scores, or transcript")
+        case .other: return L10n.tr("Tap + to add a document")
         }
     }
 
     var body: some View {
         VStack(spacing: 12) {
             HStack {
-                Text("Documents")
+                Text(L10n.tr("Documents"))
                     .font(.headline)
                 Spacer()
                 Button {
@@ -306,11 +308,12 @@ struct DocumentsSection: View {
                     Image(systemName: "plus.circle.fill")
                         .foregroundStyle(.blue)
                 }
+                .accessibilityLabel(L10n.tr("Add document"))
             }
             .padding(.horizontal)
 
             if college.documents.isEmpty {
-                EmptyStateView(icon: "doc.badge.plus", title: "No documents", subtitle: emptyDocumentSubtitle)
+                EmptyStateView(icon: "doc.badge.plus", title: L10n.tr("No documents"), subtitle: emptyDocumentSubtitle)
             } else {
                 ForEach(college.documents.sorted { $0.lastEdited > $1.lastEdited }) { doc in
                     NavigationLink(destination: EssayEditorView(document: doc)) {
@@ -341,7 +344,7 @@ struct DocumentRowView: View {
                 Text(document.title)
                     .font(.subheadline.bold())
                     .lineLimit(1)
-                Text(document.type.rawValue)
+                Text(document.type.localizedTitle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -354,7 +357,7 @@ struct DocumentRowView: View {
                         .font(.caption.bold())
                         .foregroundStyle(document.wordCountStatus.color)
                 } else {
-                    Text("\(document.wordCount)w")
+                    Text(L10n.format("%lldw", document.wordCount))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -385,7 +388,7 @@ struct NotesSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Notes")
+            Text(L10n.tr("Notes"))
                 .font(.headline)
                 .padding(.horizontal)
 
@@ -395,7 +398,7 @@ struct NotesSection: View {
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
                 .padding(.horizontal)
 
-            Text("Jot down impressions, visit notes, or research.")
+            Text(L10n.tr("Jot down impressions, visit notes, or research."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal)
@@ -424,32 +427,32 @@ struct AddDeadlineView: View {
         NavigationStack {
             Form {
                 Section {
-                    Picker("Type", selection: $type) {
+                    Picker(L10n.tr("Type"), selection: $type) {
                         ForEach(DeadlineType.suggested(for: college)) { t in
-                            Label(t.rawValue, systemImage: t.icon).tag(t)
+                            Label(t.localizedTitle, systemImage: t.icon).tag(t)
                         }
                     }
                     if type == .custom {
-                        TextField("Label", text: $customLabel)
+                        TextField(L10n.tr("Label"), text: $customLabel)
                     }
-                    DatePicker("Date", selection: $date, displayedComponents: .date)
+                    DatePicker(L10n.tr("Date"), selection: $date, displayedComponents: .date)
                 }
 
                 Section {
-                    Toggle("Notify me", isOn: $notify)
+                    Toggle(L10n.tr("Notify me"), isOn: $notify)
                     if notify {
-                        Text("Local reminders at 9:00 — 30 days, 1 week, 1 day, and the day of the deadline. These are regular notifications, not Critical Alerts.")
+                        Text(L10n.tr("Local reminders at 9:00 — 30 days, 1 week, 1 day, and the day of the deadline. These are regular notifications, not Critical Alerts."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
             }
-            .navigationTitle("Add Deadline")
+            .navigationTitle(L10n.tr("Add Deadline"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button(L10n.tr("Cancel")) { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Add") { save() }
+                    Button(L10n.tr("Add")) { save() }
                         .disabled(type == .custom && customLabel.isEmpty)
                 }
             }
@@ -488,28 +491,28 @@ struct AddDocumentView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Picker("Type", selection: $type) {
+                Picker(L10n.tr("Type"), selection: $type) {
                     ForEach(DocumentType.suggested(for: college)) { t in
-                        Label(t.rawValue, systemImage: t.icon).tag(t)
+                        Label(t.localizedTitle, systemImage: t.icon).tag(t)
                     }
                 }
 
-                TextField("Title / Prompt snippet", text: $title)
+                TextField(L10n.tr("Title / Prompt snippet"), text: $title)
 
                 HStack {
-                    Text("Word Limit")
+                    Text(L10n.tr("Word Limit"))
                     Spacer()
-                    TextField("Optional", text: $wordLimit)
+                    TextField(L10n.tr("Optional"), text: $wordLimit)
                         .multilineTextAlignment(.trailing)
                         .keyboardType(.numberPad)
                 }
             }
-            .navigationTitle("Add Document")
+            .navigationTitle(L10n.tr("Add Document"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button(L10n.tr("Cancel")) { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Add") { save() }.disabled(title.isEmpty)
+                    Button(L10n.tr("Add")) { save() }.disabled(title.isEmpty)
                 }
             }
         }
@@ -532,15 +535,17 @@ struct CollegeCompareView: View {
     let colleges: [College]
     @Environment(\.dismiss) private var dismiss
 
-    private let rows: [(label: String, value: (College) -> String)] = [
-        ("Status",          { $0.status.rawValue }),
-        ("Acceptance Rate", { $0.acceptanceRate.map { String(format: "%.1f%%", $0) } ?? "—" }),
-        ("QS Rank",         { $0.rankDisplay ?? "—" }),
-        ("Location",        { $0.locationLine ?? "—" }),
-        ("Deadlines",       { "\($0.deadlines.count)" }),
-        ("Documents",       { "\($0.documents.count)" }),
-        ("Nearest Deadline",{ $0.nearestDeadline.map { $0.date.shortFormatted } ?? "None" }),
-    ]
+    private var rows: [(label: String, value: (College) -> String)] {
+        [
+            (L10n.tr("Status"), { $0.status.localizedTitle }),
+            (L10n.tr("Acceptance Rate"), { $0.acceptanceRate.map { String(format: "%.1f%%", $0) } ?? "—" }),
+            (L10n.tr("QS Rank"), { $0.localizedRankDisplay ?? "—" }),
+            (L10n.tr("Location"), { $0.localizedLocationLine ?? "—" }),
+            (L10n.tr("Deadlines"), { "\($0.deadlines.count)" }),
+            (L10n.tr("Documents"), { "\($0.documents.count)" }),
+            (L10n.tr("Nearest Deadline"), { $0.nearestDeadline.map { $0.date.shortFormatted } ?? L10n.tr("None") }),
+        ]
+    }
 
     var body: some View {
         NavigationStack {
@@ -594,11 +599,11 @@ struct CollegeCompareView: View {
                 .padding()
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("Compare")
+            .navigationTitle(L10n.tr("Compare"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                    Button(L10n.tr("Done")) { dismiss() }
                 }
             }
         }

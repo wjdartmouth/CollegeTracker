@@ -73,6 +73,22 @@ struct CatalogCollege: Codable, Identifiable, Hashable, Sendable {
         [city, countryRegion].filter { !$0.isEmpty }.joined(separator: " · ")
     }
 
+    var localizedLocationLine: String {
+        [city, countryRegion]
+            .filter { !$0.isEmpty }
+            .map { L10n.regionName($0) }
+            .joined(separator: " · ")
+    }
+
+    /// Short QS badge. Internal catalog notes ("Unlisted / verify later") collapse to one localized label.
+    var localizedRankBadge: String? {
+        guard let rank = qsRankDisplay else { return nil }
+        if rank.hasPrefix("Not") || rank.hasPrefix("Unlisted") {
+            return L10n.tr("Not in QS")
+        }
+        return L10n.format("QS %@", rank)
+    }
+
     var qsRankDisplay: String? {
         let trimmed = qsWurRank.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
