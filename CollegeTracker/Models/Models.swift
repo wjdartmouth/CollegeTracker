@@ -42,6 +42,8 @@ enum ApplicationStatus: String, Codable, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    var localizedTitle: String { L10n.tr(rawValue) }
+
     var color: Color {
         switch self {
         case .researching:  return Color(hex: "#8E8E93")
@@ -116,12 +118,30 @@ class College {
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
+    /// Same places as `locationLine`, with Hong Kong / Japan names localized.
+    var localizedLocationLine: String? {
+        let parts = [city, countryRegion]
+            .compactMap { $0?.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+            .map { L10n.regionName($0) }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
     var rankDisplay: String? {
         if let text = qsRankText?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty {
             return text
         }
         if let ranking { return "#\(ranking)" }
         return nil
+    }
+
+    /// Catalog audit notes such as "Unlisted / verify later" are not shown to students.
+    var localizedRankDisplay: String? {
+        guard let text = rankDisplay else { return nil }
+        if text.hasPrefix("Not") || text.hasPrefix("Unlisted") {
+            return L10n.tr("Not in QS")
+        }
+        return text
     }
 
     var abbreviation: String {
@@ -165,6 +185,8 @@ enum DeadlineType: String, Codable, CaseIterable, Identifiable {
     case custom          = "Custom"
 
     var id: String { rawValue }
+
+    var localizedTitle: String { L10n.tr(rawValue) }
 
     var icon: String {
         switch self {
@@ -233,7 +255,7 @@ class Deadline {
     }
 
     var displayTitle: String {
-        type == .custom ? label : type.rawValue
+        type == .custom ? label : type.localizedTitle
     }
 
     var daysRemaining: Int {
@@ -252,11 +274,11 @@ class Deadline {
     }
 
     var urgencyLabel: String {
-        if isComplete { return "Done" }
+        if isComplete { return L10n.tr("Done") }
         switch daysRemaining {
-        case 0: return "Today!"
-        case 1: return "Tomorrow"
-        default: return "\(daysRemaining)d left"
+        case 0: return L10n.tr("Today!")
+        case 1: return L10n.tr("Tomorrow")
+        default: return L10n.format("%lldd left", daysRemaining)
         }
     }
 }
@@ -277,6 +299,8 @@ enum DocumentType: String, Codable, CaseIterable, Identifiable {
     case other              = "Other"
 
     var id: String { rawValue }
+
+    var localizedTitle: String { L10n.tr(rawValue) }
 
     var icon: String {
         switch self {

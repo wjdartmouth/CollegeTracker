@@ -37,17 +37,18 @@ final class AdmissionsStore {
                 pathwaysById: [:],
                 version: "missing",
                 source: bundledResourceName,
-                loadError: "Bundled pathways \(bundledResourceName).json was not found."
+                loadError: L10n.format("Bundled pathways %@.json was not found.", bundledResourceName)
             )
         }
         do {
             return try AdmissionsStore(data: Data(contentsOf: url))
         } catch {
+            print("Pathways load failed: \(error)")
             return AdmissionsStore(
                 pathwaysById: [:],
                 version: "invalid",
                 source: url.lastPathComponent,
-                loadError: error.localizedDescription
+                loadError: L10n.tr("The bundled pathways could not be read.")
             )
         }
     }

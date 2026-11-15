@@ -34,11 +34,11 @@ struct DocumentVaultView: View {
                 // Type filter
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
-                        FilterChip(label: "All", color: .blue, selected: selectedType == nil) {
+                        FilterChip(label: L10n.tr("All"), color: .blue, selected: selectedType == nil) {
                             selectedType = nil
                         }
                         ForEach(DocumentType.allCases) { type in
-                            FilterChip(label: type.rawValue, color: .blue,
+                            FilterChip(label: type.localizedTitle, color: .blue,
                                         selected: selectedType == type) {
                                 selectedType = selectedType == type ? nil : type
                             }
@@ -53,7 +53,11 @@ struct DocumentVaultView: View {
                     HStack {
                         Image(systemName: "sparkles")
                             .foregroundStyle(.purple)
-                        Text("\(essaysNeedingFeedback.count) essay\(essaysNeedingFeedback.count == 1 ? "" : "s") ready for AI feedback")
+                        Text(L10n.plural(
+                            essaysNeedingFeedback.count,
+                            one: "%lld essay ready for AI feedback",
+                            other: "%lld essays ready for AI feedback"
+                        ))
                             .font(.subheadline)
                         Spacer()
                         Image(systemName: "chevron.right")
@@ -74,18 +78,18 @@ struct DocumentVaultView: View {
                     }
                 }
                 .listStyle(.plain)
-                .searchable(text: $searchText, prompt: "Search documents")
+                .searchable(text: $searchText, prompt: L10n.tr("Search documents"))
                 .overlay {
                     if filteredDocuments.isEmpty {
                         EmptyStateView(
                             icon: "folder",
-                            title: "No documents",
-                            subtitle: "Add essays from a college's page"
+                            title: L10n.tr("No documents"),
+                            subtitle: L10n.tr("Add essays from a college's page")
                         )
                     }
                 }
             }
-            .navigationTitle("Document Vault")
+            .navigationTitle(L10n.tr("Document Vault"))
         }
     }
 }
@@ -117,7 +121,7 @@ struct VaultDocumentRow: View {
                         Text("·")
                             .foregroundStyle(.tertiary)
                     }
-                    Text(document.type.rawValue)
+                    Text(document.type.localizedTitle)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -127,11 +131,11 @@ struct VaultDocumentRow: View {
 
             VStack(alignment: .trailing, spacing: 4) {
                 if let limit = document.wordLimit {
-                    Text("\(document.wordCount)/\(limit)w")
+                    Text(L10n.format("%lld/%lldw", document.wordCount, limit))
                         .font(.caption.bold())
                         .foregroundStyle(document.wordCountStatus.color)
                 } else {
-                    Text("\(document.wordCount)w")
+                    Text(L10n.format("%lldw", document.wordCount))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

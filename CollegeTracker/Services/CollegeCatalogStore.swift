@@ -34,17 +34,18 @@ final class CollegeCatalogStore {
                 colleges: [],
                 version: "missing",
                 source: bundledResourceName,
-                loadError: "Bundled catalog \(bundledResourceName).json was not found."
+                loadError: L10n.format("Bundled catalog %@.json was not found.", bundledResourceName)
             )
         }
         do {
             return try CollegeCatalogStore(data: Data(contentsOf: url))
         } catch {
+            print("Catalog load failed: \(error)")
             return CollegeCatalogStore(
                 colleges: [],
                 version: "invalid",
                 source: url.lastPathComponent,
-                loadError: error.localizedDescription
+                loadError: L10n.tr("The bundled catalog could not be read.")
             )
         }
     }

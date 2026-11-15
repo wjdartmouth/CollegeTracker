@@ -21,7 +21,7 @@ struct PathwaySection: View {
             }
 
             HStack {
-                Text("Admissions pathways")
+                Text(L10n.tr("Admissions pathways"))
                     .font(.headline)
                 Spacer()
             }
@@ -30,13 +30,13 @@ struct PathwaySection: View {
             if pathways.isEmpty {
                 EmptyStateView(
                     icon: "map",
-                    title: "No pathway data",
+                    title: L10n.tr("No pathway data"),
                     subtitle: college.catalogId == nil
-                        ? "Pathways are available for schools added from the HK + Japan catalog."
-                        : "No bundled JUPAS / EJU pathway is on file for this school."
+                        ? L10n.tr("Pathways are available for schools added from the HK + Japan catalog.")
+                        : L10n.tr("No bundled JUPAS / EJU pathway is on file for this school.")
                 )
             } else {
-                Text("Typical routes from the college-data catalog. Always verify the current JUPAS / university guide or 募集要項 — these are not official deadlines.")
+                Text(L10n.tr("Typical routes from the college-data catalog. Always verify the current JUPAS / university guide or 募集要項 — these are not official deadlines."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal)
@@ -58,16 +58,17 @@ struct CatalogFactsCard: View {
             if !college.type.isEmpty || !college.foundedYear.isEmpty {
                 HStack(spacing: 16) {
                     if !college.type.isEmpty {
-                        fact("Type", college.type)
+                        fact(L10n.tr("Type"), L10n.tr(college.type))
                     }
                     if !college.foundedYear.isEmpty {
-                        fact("Founded", college.foundedYear)
+                        fact(L10n.tr("Founded"), college.foundedYear)
                     }
                 }
             }
             if let tuition = college.tuitionDisplay {
                 let currency = college.tuitionCurrency.trimmingCharacters(in: .whitespaces)
-                fact("Tuition (approx.)", currency.isEmpty ? tuition : "\(tuition) · listed in \(currency)")
+                let value = currency.isEmpty ? tuition : L10n.format("%@ · listed in %@", tuition, currency)
+                fact(L10n.tr("Tuition (approx.)"), value)
             }
             if !college.website.isEmpty {
                 if let url = URL(string: college.website) {
@@ -80,7 +81,7 @@ struct CatalogFactsCard: View {
             }
             if !college.majorList.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Faculties / majors")
+                    Text(L10n.tr("Faculties / majors"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Text(college.majorList.joined(separator: " · "))
@@ -114,7 +115,7 @@ struct PathwayCard: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(pathway.categoryTitle)
+                    Text(pathway.localizedCategoryTitle)
                         .font(.caption.bold())
                         .foregroundStyle(.blue)
                     Text(pathway.pathwayName)
@@ -122,7 +123,7 @@ struct PathwayCard: View {
                 }
                 Spacer()
                 if !pathway.confidence.isEmpty {
-                    Text(pathway.confidence.capitalized)
+                    Text(pathway.localizedConfidence)
                         .font(.caption2.bold())
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
@@ -133,23 +134,23 @@ struct PathwayCard: View {
             }
 
             if !pathway.examsRequired.isEmpty {
-                labeled("Exams / requirements", pathway.examsRequired)
+                labeled(L10n.tr("Exams / requirements"), pathway.examsRequired)
             }
             if !pathway.typicalTimeline.isEmpty {
-                labeled("Typical timeline", pathway.typicalTimeline)
+                labeled(L10n.tr("Typical timeline"), pathway.typicalTimeline)
             }
             if !pathway.languageRequirements.isEmpty {
-                labeled("Language", pathway.languageRequirements)
+                labeled(L10n.tr("Language"), pathway.languageRequirements)
             }
 
             if !pathway.notes.isEmpty {
                 if expanded || pathway.notes.count <= 220 {
-                    labeled("Notes", pathway.notes)
+                    labeled(L10n.tr("Notes"), pathway.notes)
                 } else {
-                    labeled("Notes", String(pathway.notes.prefix(220)).trimmingCharacters(in: .whitespaces) + "…")
+                    labeled(L10n.tr("Notes"), String(pathway.notes.prefix(220)).trimmingCharacters(in: .whitespaces) + "…")
                 }
                 if pathway.notes.count > 220 {
-                    Button(expanded ? "Show less" : "Show more") {
+                    Button(expanded ? L10n.tr("Show less") : L10n.tr("Show more")) {
                         expanded.toggle()
                     }
                     .font(.caption.bold())

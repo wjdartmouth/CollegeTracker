@@ -15,15 +15,21 @@ enum DeadlineReminderPlan {
         leadDays.map { requestID(deadlineID: deadlineID, daysBefore: $0) }
     }
 
+    /// English format key for a lead time. Nil when the title is just the deadline name.
+    static func titleFormat(daysBefore: Int) -> String? {
+        switch daysBefore {
+        case 30: return "%@ in 30 days"
+        case 7:  return "%@ in 1 week"
+        case 1:  return "%@ is tomorrow"
+        case 0:  return "%@ is today"
+        default: return nil
+        }
+    }
+
     /// Titles name the deadline type (JUPAS, EJU, etc.) rather than a generic "deadline".
     static func title(daysBefore: Int, displayTitle: String) -> String {
-        switch daysBefore {
-        case 30: return "\(displayTitle) in 30 days"
-        case 7:  return "\(displayTitle) in 1 week"
-        case 1:  return "\(displayTitle) is tomorrow"
-        case 0:  return "\(displayTitle) is today"
-        default: return displayTitle
-        }
+        guard let key = titleFormat(daysBefore: daysBefore) else { return displayTitle }
+        return L10n.format(key, displayTitle)
     }
 
     static func body(collegeName: String, dateText: String) -> String {

@@ -22,7 +22,7 @@ struct CatalogCollegePicker: View {
 
             if let error = store.loadError {
                 ContentUnavailableView(
-                    "Catalog unavailable",
+                    L10n.tr("Catalog unavailable"),
                     systemImage: "exclamationmark.triangle",
                     description: Text(error)
                 )
@@ -42,18 +42,18 @@ struct CatalogCollegePicker: View {
                 .listStyle(.plain)
             }
         }
-        .searchable(text: $query, prompt: "Search name, city, region, or id")
-        .navigationTitle("Choose a college")
+        .searchable(text: $query, prompt: L10n.tr("Search name, city, region, or id"))
+        .navigationTitle(L10n.tr("Choose a college"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .bottomBar) {
-                Button("School not listed? Add custom") {
+                Button(L10n.tr("School not listed? Add custom")) {
                     onCustom()
                 }
             }
         }
         .overlay(alignment: .bottomTrailing) {
-            Text("\(results.count) of \(store.colleges.count)")
+            Text(L10n.format("%lld of %lld", results.count, store.colleges.count))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .padding(10)
@@ -63,11 +63,11 @@ struct CatalogCollegePicker: View {
     private var regionBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                FilterChip(label: "All", color: .blue, selected: region == nil) {
+                FilterChip(label: L10n.tr("All"), color: .blue, selected: region == nil) {
                     region = nil
                 }
                 ForEach(store.regions, id: \.self) { item in
-                    FilterChip(label: item, color: .blue, selected: region == item) {
+                    FilterChip(label: L10n.regionName(item), color: .blue, selected: region == item) {
                         region = region == item ? nil : item
                     }
                 }
@@ -94,21 +94,21 @@ struct CatalogCollegeRow: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                Text([college.locationLine, college.id].filter { !$0.isEmpty }.joined(separator: " · "))
+                Text([college.localizedLocationLine, college.id].filter { !$0.isEmpty }.joined(separator: " · "))
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             }
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 4) {
-                if let rank = college.qsRankDisplay {
-                    Text(rank.hasPrefix("Not") || rank.hasPrefix("Unlisted") ? rank : "QS \(rank)")
+                if let rank = college.localizedRankBadge {
+                    Text(rank)
                         .font(.caption2.bold())
                         .foregroundStyle(.blue)
                         .lineLimit(2)
                         .multilineTextAlignment(.trailing)
                 }
                 if alreadyAdded {
-                    Text("Added")
+                    Text(L10n.tr("Added"))
                         .font(.caption2.bold())
                         .foregroundStyle(.secondary)
                 }

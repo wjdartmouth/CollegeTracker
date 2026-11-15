@@ -35,9 +35,9 @@ struct OnboardingView: View {
                     Image(systemName: "graduationcap.fill")
                         .font(.system(size: 64))
                         .foregroundStyle(.blue)
-                    Text("College Tracker")
+                    Text(L10n.tr("College Tracker"))
                         .font(.largeTitle.bold())
-                    Text("Your college journey, organized and intelligent.")
+                    Text(L10n.tr("Your college journey, organized and intelligent."))
                         .font(.body)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -45,7 +45,7 @@ struct OnboardingView: View {
 
                 // Role picker — counselor tools are deferred (no fake iCloud sharing).
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("I am a...")
+                    Text(L10n.tr("I am a..."))
                         .font(.headline)
                     HStack(spacing: 12) {
                         RolePill(role: .student, selected: role == .student) {
@@ -58,9 +58,9 @@ struct OnboardingView: View {
 
                 // Name input
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Your name")
+                    Text(L10n.tr("Your name"))
                         .font(.headline)
-                    TextField("e.g. Alex Johnson", text: $name)
+                    TextField(L10n.tr("e.g. Alex Johnson"), text: $name)
                         .textFieldStyle(.roundedBorder)
                         .font(.body)
                 }
@@ -71,7 +71,7 @@ struct OnboardingView: View {
                 Button {
                     createProfile()
                 } label: {
-                    Text("Get Started")
+                    Text(L10n.tr("Get Started"))
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding()
@@ -98,7 +98,7 @@ struct RolePill: View {
     let selected: Bool
     let onTap: () -> Void
 
-    var label: String { role == .student ? "Student" : "Counselor" }
+    var label: String { role == .student ? L10n.tr("Student") : L10n.tr("Counselor") }
     var icon: String  { role == .student ? "person.fill" : "person.2.fill" }
 
     var body: some View {
@@ -134,8 +134,8 @@ struct CounselorComingSoonPill: View {
     var body: some View {
         HStack {
             Image(systemName: "person.2.fill")
-            Text("Counselor")
-            Text("Coming soon")
+            Text(L10n.tr("Counselor"))
+            Text(L10n.tr("Coming soon"))
                 .font(.caption2.bold())
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
@@ -148,7 +148,7 @@ struct CounselorComingSoonPill: View {
         .background(Color(.systemGray6))
         .foregroundStyle(.secondary)
         .clipShape(RoundedRectangle(cornerRadius: 12))
-        .accessibilityLabel("Counselor, coming soon")
+        .accessibilityLabel(L10n.tr("Counselor, coming soon"))
     }
 }
 
@@ -162,15 +162,15 @@ struct CounselorComingSoonView: View {
                 Image(systemName: "person.2.slash")
                     .font(.system(size: 56))
                     .foregroundStyle(.secondary)
-                Text("Counselor tools are coming soon")
+                Text(L10n.tr("Counselor tools are coming soon"))
                     .font(.title2.bold())
                     .multilineTextAlignment(.center)
-                Text("Student–counselor CloudKit sharing is deferred for the first release. Existing counselor profiles can continue as a student to track applications locally.")
+                Text(L10n.tr("Student–counselor CloudKit sharing is deferred for the first release. Existing counselor profiles can continue as a student to track applications locally."))
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
-                Button("Continue as student") {
+                Button(L10n.tr("Continue as student")) {
                     profile.role = .student
                     try? profile.modelContext?.save()
                 }
@@ -178,7 +178,7 @@ struct CounselorComingSoonView: View {
                 Spacer()
             }
             .padding()
-            .navigationTitle("Counselor")
+            .navigationTitle(L10n.tr("Counselor"))
         }
     }
 }
@@ -190,19 +190,19 @@ struct StudentTabView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             DashboardView(profile: profile)
-                .tabItem { Label("Dashboard", systemImage: "square.grid.2x2.fill") }
+                .tabItem { Label(L10n.tr("Dashboard"), systemImage: "square.grid.2x2.fill") }
                 .tag(0)
 
             CollegeListView(profile: profile)
-                .tabItem { Label("Colleges", systemImage: "building.columns.fill") }
+                .tabItem { Label(L10n.tr("Colleges"), systemImage: "building.columns.fill") }
                 .tag(1)
 
             DocumentVaultView(profile: profile)
-                .tabItem { Label("Documents", systemImage: "folder.fill") }
+                .tabItem { Label(L10n.tr("Documents"), systemImage: "folder.fill") }
                 .tag(2)
 
             ProgressDashboardView(profile: profile)
-                .tabItem { Label("Progress", systemImage: "chart.pie.fill") }
+                .tabItem { Label(L10n.tr("Progress"), systemImage: "chart.pie.fill") }
                 .tag(3)
         }
         .onAppear {
@@ -218,11 +218,11 @@ struct CounselorTabView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             CounselorDashboardView(counselor: counselor)
-                .tabItem { Label("Students", systemImage: "person.2.fill") }
+                .tabItem { Label(L10n.tr("Students"), systemImage: "person.2.fill") }
                 .tag(0)
 
             CounselorOverviewView(counselor: counselor)
-                .tabItem { Label("Overview", systemImage: "chart.pie.fill") }
+                .tabItem { Label(L10n.tr("Overview"), systemImage: "chart.pie.fill") }
                 .tag(1)
         }
     }

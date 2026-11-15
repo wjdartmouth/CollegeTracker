@@ -3,6 +3,7 @@
 //  CollegeTrackerTests
 //
 
+import Foundation
 import Testing
 @testable import CollegeTracker
 
@@ -336,10 +337,17 @@ struct DeadlineReminderPlanTests {
     }
 
     @Test func titlesNameJUPASAndEJUTypes() {
-        #expect(DeadlineReminderPlan.title(daysBefore: 30, displayTitle: "JUPAS") == "JUPAS in 30 days")
-        #expect(DeadlineReminderPlan.title(daysBefore: 7, displayTitle: "EJU") == "EJU in 1 week")
-        #expect(DeadlineReminderPlan.title(daysBefore: 1, displayTitle: "Non-JUPAS") == "Non-JUPAS is tomorrow")
-        #expect(DeadlineReminderPlan.title(daysBefore: 0, displayTitle: "Common Test") == "Common Test is today")
+        // Lock the English format keys. `title()` fills those keys from the string catalog,
+        // so a Japanese test scheme must not be required to keep this green.
+        #expect(DeadlineReminderPlan.titleFormat(daysBefore: 30) == "%@ in 30 days")
+        #expect(DeadlineReminderPlan.titleFormat(daysBefore: 7) == "%@ in 1 week")
+        #expect(DeadlineReminderPlan.titleFormat(daysBefore: 1) == "%@ is tomorrow")
+        #expect(DeadlineReminderPlan.titleFormat(daysBefore: 0) == "%@ is today")
+        #expect(DeadlineReminderPlan.titleFormat(daysBefore: 3) == nil)
+        #expect(String(format: DeadlineReminderPlan.titleFormat(daysBefore: 30)!, "JUPAS") == "JUPAS in 30 days")
+        #expect(String(format: DeadlineReminderPlan.titleFormat(daysBefore: 7)!, "EJU") == "EJU in 1 week")
+        #expect(String(format: DeadlineReminderPlan.titleFormat(daysBefore: 1)!, "Non-JUPAS") == "Non-JUPAS is tomorrow")
+        #expect(String(format: DeadlineReminderPlan.titleFormat(daysBefore: 0)!, "Common Test") == "Common Test is today")
         #expect(DeadlineReminderPlan.body(collegeName: "The University of Hong Kong", dateText: "Dec 3, 2026")
                 == "The University of Hong Kong · Dec 3, 2026")
     }
@@ -414,5 +422,131 @@ struct StudentCRMMetricsTests {
         #expect(stats.jupasApplications == 2)
         #expect(stats.personalStatements == 1)
         #expect(stats.ejuScores == 1)
+    }
+}
+
+struct LocalizationCatalogTests {
+    private func repoFile(_ name: String) -> URL {
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent(name)
+    }
+
+    private func loadStrings(at url: URL) throws -> [String: Any] {
+        let data = try Data(contentsOf: url)
+        let root = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        return root?["strings"] as? [String: Any] ?? [:]
+    }
+
+    private func value(_ entry: Any?, language: String) -> String? {
+        guard let entry = entry as? [String: Any],
+              let localizations = entry["localizations"] as? [String: Any],
+              let languageEntry = localizations[language] as? [String: Any],
+              let unit = languageEntry["stringUnit"] as? [String: Any],
+              let value = unit["value"] as? String else {
+            return nil
+        }
+        return value
+    }
+
+    private func specifierCount(_ text: String) -> Int {
+        var count = 0
+        var index = text.startIndex
+        while index < text.endIndex {
+            if text[index] == "%" {
+                let next = text.index(after: index)
+                if next < text.endIndex, text[next] == "%" {
+                    index = text.index(after: next)
+                    continue
+                }
+                count += 1
+            }
+            index = text.index(after: index)
+        }
+        return count
+    }
+
+    @Test func stringCatalogCoversEnglishJapaneseAndTraditionalChinese() throws {
+        let strings = try loadStrings(at: repoFile("CollegeTracker/Localizable.xcstrings"))
+        #expect(strings.isEmpty == false)
+        for (key, entry) in strings {
+            let entry = entry as? [String: Any]
+            let localizations = entry?["localizations"] as? [String: Any]
+            #expect(localizations?["zh-Hans"] == nil, "No Simplified Chinese: \(key)")
+            for language in ["en", "ja", "zh-Hant"] {
+                let translated = value(entry, language: language)
+                #expect(translated?.isEmpty == false, "\(language) missing for \(key)")
+            }
+            let en = value(entry, language: "en") ?? ""
+            let ja = value(entry, language: "ja") ?? ""
+            let zh = value(entry, language: "zh-Hant") ?? ""
+            #expect(en == key)
+            #expect(specifierCount(en) == specifierCount(ja))
+            #expect(specifierCount(en) == specifierCount(zh))
+        }
+    }
+
+    @Test func infoPlistCatalogLocalizesDisplayNameOnly() throws {
+        let strings = try loadStrings(at: repoFile("CollegeTracker/InfoPlist.xcstrings"))
+        #expect(Set(strings.keys) == ["CFBundleDisplayName", "CFBundleName"])
+        for key in strings.keys {
+            #expect(value(strings[key], language: "en") == "College Tracker")
+            #expect(value(strings[key], language: "ja") == "進学トラッカー")
+            #expect(value(strings[key], language: "zh-Hant") == "升學追蹤")
+        }
+    }
+
+    @Test func enumsAndPathwayTitlesAreCatalogKeys() throws {
+        let strings = try loadStrings(at: repoFile("CollegeTracker/Localizable.xcstrings"))
+        let keys = Set(strings.keys)
+        for status in ApplicationStatus.allCases {
+            #expect(keys.contains(status.rawValue))
+        }
+        for type in DeadlineType.allCases {
+            #expect(keys.contains(type.rawValue))
+        }
+        for type in DocumentType.allCases {
+            #expect(keys.contains(type.rawValue))
+        }
+        for area in FocusArea.allCases {
+            #expect(keys.contains(area.rawValue))
+        }
+        let categories = [
+            "jupas_local", "local_jupas", "non_jupas_local", "international_non_jupas",
+            "direct_application", "japanese_domestic", "international_eju",
+            "international_qualifications", "overseas_returnee"
+        ]
+        for slug in categories {
+            let pathway = AdmissionPathway(
+                studentCategory: slug,
+                pathwayName: "sample",
+                examsRequired: "",
+                typicalTimeline: "",
+                languageRequirements: "",
+                notes: "",
+                confidence: "high"
+            )
+            #expect(keys.contains(pathway.categoryTitle))
+        }
+        for format in [30, 7, 1, 0].compactMap(DeadlineReminderPlan.titleFormat(daysBefore:)) {
+            #expect(keys.contains(format))
+        }
+        let schoolTypes = [
+            "National",
+            "National (merged into Institute of Science Tokyo)",
+            "Private",
+            "Public (UGC-funded)",
+            "Public (metropolitan)",
+            "Public (municipal)",
+            "Public (prefectural/municipal)",
+            "Publicly-funded (not UGC-funded)",
+            "Self-financing (VTC member institution)",
+            "Self-financing (private)",
+            "Self-financing (publicly owned)"
+        ]
+        for type in schoolTypes {
+            #expect(keys.contains(type))
+        }
     }
 }

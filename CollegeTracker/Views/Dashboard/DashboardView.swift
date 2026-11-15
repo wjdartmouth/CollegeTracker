@@ -52,9 +52,9 @@ struct DashboardView: View {
 
                     // Stats row
                     HStack(spacing: 12) {
-                        StatCard(value: colleges.count, label: "Schools", icon: "building.columns.fill", color: .blue)
-                        StatCard(value: inProgressCount, label: "In Progress", icon: "pencil.circle.fill", color: .purple)
-                        StatCard(value: upcomingCount, label: "Upcoming", icon: "calendar.badge.clock", color: .orange)
+                        StatCard(value: colleges.count, label: L10n.tr("Schools"), icon: "building.columns.fill", color: .blue)
+                        StatCard(value: inProgressCount, label: L10n.tr("In Progress"), icon: "pencil.circle.fill", color: .purple)
+                        StatCard(value: upcomingCount, label: L10n.tr("Upcoming"), icon: "calendar.badge.clock", color: .orange)
                     }
                     .padding(.horizontal)
 
@@ -65,7 +65,7 @@ struct DashboardView: View {
 
                     if !overdueDeadlines.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "Overdue", icon: "exclamationmark.circle.fill")
+                            SectionHeader(title: L10n.tr("Overdue"), icon: "exclamationmark.circle.fill")
                             DeadlineTimelineView(items: overdueDeadlines)
                         }
                         .padding(.horizontal)
@@ -74,14 +74,14 @@ struct DashboardView: View {
                     // Upcoming deadlines
                     if !upcomingDeadlines.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
-                            SectionHeader(title: "Upcoming Deadlines", icon: "calendar.badge.clock")
+                            SectionHeader(title: L10n.tr("Upcoming Deadlines"), icon: "calendar.badge.clock")
                             DeadlineTimelineView(items: upcomingDeadlines)
                         }
                         .padding(.horizontal)
                     } else if !colleges.isEmpty && overdueDeadlines.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
-                            SectionHeader(title: "Upcoming Deadlines", icon: "calendar.badge.clock")
-                            Text("Add a JUPAS, EJU, or other deadline from a school's Deadlines tab. Local reminders fire at 9:00 — 30 days, 1 week, 1 day, and the day of.")
+                            SectionHeader(title: L10n.tr("Upcoming Deadlines"), icon: "calendar.badge.clock")
+                            Text(L10n.tr("Add a JUPAS, EJU, or other deadline from a school's Deadlines tab. Local reminders fire at 9:00 — 30 days, 1 week, 1 day, and the day of."))
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
@@ -91,7 +91,7 @@ struct DashboardView: View {
                     // College status board
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
-                            SectionHeader(title: "My Colleges", icon: "building.columns")
+                            SectionHeader(title: L10n.tr("My Colleges"), icon: "building.columns")
                             Spacer()
                             Button {
                                 showAddCollege = true
@@ -100,14 +100,15 @@ struct DashboardView: View {
                                     .foregroundStyle(.blue)
                                     .font(.title3)
                             }
+                            .accessibilityLabel(L10n.tr("Add College"))
                         }
                         .padding(.horizontal)
 
                         if colleges.isEmpty {
                             EmptyStateView(
                                 icon: "building.columns",
-                                title: "No colleges yet",
-                                subtitle: "Tap + to add your first school"
+                                title: L10n.tr("No colleges yet"),
+                                subtitle: L10n.tr("Tap + to add your first school")
                             )
                         } else {
                             LazyVStack(spacing: 10) {
@@ -132,6 +133,7 @@ struct DashboardView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
+                    .accessibilityLabel(L10n.tr("Add College"))
                 }
             }
             .sheet(isPresented: $showAddCollege) {
@@ -148,9 +150,9 @@ struct DashboardView: View {
     private var greeting: String {
         let hour = Calendar.current.component(.hour, from: .now)
         switch hour {
-        case 0..<12: return "Good morning,"
-        case 12..<17: return "Good afternoon,"
-        default: return "Good evening,"
+        case 0..<12: return L10n.tr("Good morning,")
+        case 12..<17: return L10n.tr("Good afternoon,")
+        default: return L10n.tr("Good evening,")
         }
     }
 }
@@ -283,7 +285,7 @@ struct CollegeRowView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {
-                    Text("No upcoming deadlines")
+                    Text(L10n.tr("No upcoming deadlines"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -295,7 +297,7 @@ struct CollegeRowView: View {
             HStack(spacing: 4) {
                 Image(systemName: college.status.icon)
                     .font(.caption2)
-                Text(college.status.rawValue)
+                Text(college.status.localizedTitle)
                     .font(.caption2.bold())
             }
             .padding(.horizontal, 8)
@@ -341,9 +343,9 @@ struct NotificationDeniedBanner: View {
             Image(systemName: "bell.slash.fill")
                 .foregroundStyle(.orange)
             VStack(alignment: .leading, spacing: 4) {
-                Text("Deadline reminders are off")
+                Text(L10n.tr("Deadline reminders are off"))
                     .font(.subheadline.bold())
-                Text("Enable notifications in Settings to get JUPAS, EJU, and other deadline alerts at 9:00. These are regular local notifications, not Critical Alerts.")
+                Text(L10n.tr("Enable notifications in Settings to get JUPAS, EJU, and other deadline alerts at 9:00. These are regular local notifications, not Critical Alerts."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
