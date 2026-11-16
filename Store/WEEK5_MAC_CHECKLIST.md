@@ -1,8 +1,10 @@
 # Week 5 Mac / Xcode checklist
 
-Checklist only. None of these steps were run for Week 4. This environment has no Xcode, Simulator, TestFlight, or App Store Connect session.
+Checklist only. None of these steps have been run in this environment. There is no Xcode, Simulator, TestFlight, or App Store Connect session here.
 
-Do them on a Mac after this branch is merged, against the bundle ID you confirm in step 1. Do not change the bundle ID after the App Store Connect record exists.
+Do them on a Mac against current `main` (Week 4, [PR #5](https://github.com/wjdartmouth/CollegeTracker/pull/5), merge commit `10025473`). Use the bundle ID you confirm in step 1. Do not change the bundle ID after the App Store Connect record exists.
+
+Student-flow ticks that are not signing or upload steps live in [`WEEK5_QA_CHECKLIST.md`](WEEK5_QA_CHECKLIST.md).
 
 1. Open `CollegeTracker.xcodeproj` in Xcode. Confirm the target bundle ID is still `edu.asu.jwang875.CollegeTracker`. Confirm the CloudKit container string in code is still `iCloud.edu.asu.jwang875.CollegeTracker`.
 2. Select the Development Team. Let automatic signing create the provisioning profile. Do not tick Critical Alerts.
