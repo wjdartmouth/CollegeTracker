@@ -6,7 +6,14 @@ import Combine
 
 @main
 struct CollegeTrackerApp: App {
-    @State private var notificationDelegate = NotificationDelegate()
+    @State private var notificationDelegate: NotificationDelegate
+
+    init() {
+        let delegate = NotificationDelegate()
+        // Set before the first frame so a cold start from a reminder still receives the tap.
+        UNUserNotificationCenter.current().delegate = delegate
+        _notificationDelegate = State(initialValue: delegate)
+    }
 
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -34,8 +41,8 @@ struct CollegeTrackerApp: App {
         WindowGroup {
             RootView()
                 .onAppear {
-                    NotificationService.shared.requestPermission()
                     UNUserNotificationCenter.current().delegate = notificationDelegate
+                    NotificationService.shared.requestPermission()
                 }
         }
         .modelContainer(sharedModelContainer)
@@ -50,6 +57,14 @@ class NotificationDelegate: NSObject, UNUserNotificationCenterDelegate, Observab
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                  willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
         return [.banner, .sound, .badge]
+    }
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                 didReceive response: UNNotificationResponse) async {
+        let info = response.notification.request.content.userInfo
+        await MainActor.run {
+            NotificationRouter.shared.open(userInfo: info)
+        }
     }
 }
 

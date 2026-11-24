@@ -2,13 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <!--
-  Audited 15 Nov 2026 against the app target (not a Mac privacy report).
+  Audited 24 Nov 2026 against the app target (not a Mac privacy report).
   Required-reason APIs are not called by this target: no UserDefaults,
   no file-timestamp APIs (getattrlist/stat/NSFileModificationDate and the rest of that list),
   no system boot time, disk space, or active-keyboard APIs.
-  NSPrivacyCollectedDataTypes covers the reachable AI Feedback POST of essay text
-  to api.anthropic.com. On-device SwiftData and optional private CloudKit sync
-  are not declared as collected: the developer does not receive that data.
+  NSPrivacyCollectedDataTypes is empty. Essay AI remains in the tree but is not
+  reachable from the student UI, and AIFeedbackService.networkEnabled is false, so
+  the app does not POST essay text to api.anthropic.com. On-device SwiftData and
+  optional private CloudKit sync are not collected: the developer does not receive that data.
   No tracking. No NSPrivacyTrackingDomains.
   See Store/APP_PRIVACY.md. Reconcile with an Xcode privacy report before submission.
 -->
@@ -18,20 +19,7 @@
 	<key>NSPrivacyTrackingDomains</key>
 	<array/>
 	<key>NSPrivacyCollectedDataTypes</key>
-	<array>
-		<dict>
-			<key>NSPrivacyCollectedDataType</key>
-			<string>NSPrivacyCollectedDataTypeOtherUserContent</string>
-			<key>NSPrivacyCollectedDataTypeLinked</key>
-			<false/>
-			<key>NSPrivacyCollectedDataTypeTracking</key>
-			<false/>
-			<key>NSPrivacyCollectedDataTypePurposes</key>
-			<array>
-				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
-			</array>
-		</dict>
-	</array>
+	<array/>
 	<key>NSPrivacyAccessedAPITypes</key>
 	<array/>
 </dict>

@@ -183,30 +183,68 @@ struct CounselorComingSoonView: View {
     }
 }
 
+enum StudentTab: Int {
+    case dashboard = 0
+    case colleges = 1
+    case documents = 2
+    case progress = 3
+    case settings = 4
+}
+
+@MainActor
+final class StudentTabRouter: ObservableObject {
+    static let shared = StudentTabRouter()
+    @Published var requested: StudentTab?
+
+    func select(_ tab: StudentTab) {
+        requested = tab
+    }
+}
+
 struct StudentTabView: View {
     let profile: UserProfile
-    @State private var selectedTab = 0
+    @State private var selectedTab = StudentTab.dashboard.rawValue
+    @ObservedObject private var notificationRouter = NotificationRouter.shared
+    @ObservedObject private var tabRouter = StudentTabRouter.shared
 
     var body: some View {
         TabView(selection: $selectedTab) {
             DashboardView(profile: profile)
                 .tabItem { Label(L10n.tr("Dashboard"), systemImage: "square.grid.2x2.fill") }
-                .tag(0)
+                .tag(StudentTab.dashboard.rawValue)
 
             CollegeListView(profile: profile)
                 .tabItem { Label(L10n.tr("Colleges"), systemImage: "building.columns.fill") }
-                .tag(1)
+                .tag(StudentTab.colleges.rawValue)
 
             DocumentVaultView(profile: profile)
                 .tabItem { Label(L10n.tr("Documents"), systemImage: "folder.fill") }
-                .tag(2)
+                .tag(StudentTab.documents.rawValue)
 
             ProgressDashboardView(profile: profile)
                 .tabItem { Label(L10n.tr("Progress"), systemImage: "chart.pie.fill") }
-                .tag(3)
+                .tag(StudentTab.progress.rawValue)
+
+            SettingsView(profile: profile)
+                .tabItem { Label(L10n.tr("Settings"), systemImage: "gearshape.fill") }
+                .tag(StudentTab.settings.rawValue)
+        }
+        .onChange(of: tabRouter.requested) { _, tab in
+            if let tab {
+                selectedTab = tab.rawValue
+                tabRouter.requested = nil
+            }
         }
         .onAppear {
+            if notificationRouter.link != nil {
+                selectedTab = StudentTab.colleges.rawValue
+            }
             NotificationService.shared.requestPermissionAndReschedule(colleges: profile.colleges)
+        }
+        .onChange(of: notificationRouter.link) { _, link in
+            if link != nil {
+                selectedTab = StudentTab.colleges.rawValue
+            }
         }
     }
 }

@@ -58,7 +58,7 @@ class NotificationService {
     }
 
     /// Local reminders only — never `.defaultCritical`. Critical Alerts need a special entitlement this app does not use.
-    func scheduleReminders(for deadline: Deadline, collegeName: String) {
+    func scheduleReminders(for deadline: Deadline, collegeName: String, collegeID: UUID? = nil) {
         cancelReminders(for: deadline)
         guard DeadlineReminderPlan.shouldSchedule(isComplete: deadline.isComplete, deadlineDate: deadline.date) else {
             return
@@ -70,7 +70,10 @@ class NotificationService {
             content.title = DeadlineReminderPlan.title(daysBefore: days, displayTitle: deadline.displayTitle)
             content.body = DeadlineReminderPlan.body(collegeName: collegeName, dateText: dateText)
             content.sound = .default
-            content.userInfo = ["deadlineID": deadline.id.uuidString]
+            content.userInfo = NotificationPayload.userInfo(
+                deadlineID: deadline.id,
+                collegeID: collegeID ?? deadline.college?.id
+            )
 
             var components = Calendar.current.dateComponents(
                 [.year, .month, .day],
@@ -104,7 +107,7 @@ class NotificationService {
         for college in colleges {
             cancelAllReminders(for: college)
             for deadline in college.deadlines {
-                scheduleReminders(for: deadline, collegeName: college.name)
+                scheduleReminders(for: deadline, collegeName: college.name, collegeID: college.id)
             }
         }
     }

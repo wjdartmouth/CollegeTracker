@@ -1,6 +1,6 @@
 # Privacy manifest audit and App Privacy answers
 
-Audited from the source tree on 15 November 2026. This was **not** an Xcode privacy report, an archive, or an App Store Connect submission. Before upload, generate the privacy report in Xcode and reconcile it with this file. The Week 5 checklist says the same thing.
+Audited from the source tree on 24 November 2026. This was **not** an Xcode privacy report, an archive, or an App Store Connect submission. Before upload, generate the privacy report in Xcode and reconcile it with this file. The Week 5 checklist says the same thing.
 
 Bundle ID and CloudKit container were not changed:
 
@@ -15,7 +15,7 @@ Bundle ID and CloudKit container were not changed:
 | CloudKit private database (`cloudKitDatabase: .automatic`), falling back to local if configuration fails | Code is present. No entitlements file yet, so a build without the capability stays local. | No. Private iCloud database; the developer has no server that reads it. |
 | Local notifications (`UserNotifications`), sound `.default`, not Critical Alerts | Yes | No. Scheduled on device. |
 | `UIApplication.shared.open` for a school URL the student taps | Yes | No. The browser loads the university site. |
-| `URLSession` POST to `https://api.anthropic.com/v1/messages` from AI Feedback | Yes, if the student opens that screen. Essay text, optional prompt, word count, focus, and school name are in the body. No API key is bundled, so the call does not succeed as shipped. | The body leaves the device toward Anthropic. Declared below. |
+| `URLSession` POST to `https://api.anthropic.com/v1/messages` | The method is still in `AIFeedbackService`, and `networkEnabled` is `false`. `getFeedback` throws before the request. The student UI does not present `EssayFeedbackView`. | No. Essay text is not sent. Do not declare Other User Content. |
 | Counselor CloudKit sharing | Code exists and is not reachable from onboarding (Coming soon). | Not a v1 path. |
 | UserDefaults, file timestamps (`stat`, `NSFileModificationDate`, and the rest of that list), system boot time, disk space, active keyboards | Not called by this target | Do not declare a required-reason API for them. |
 | Tracking, advertising, contacts, photos, camera, microphone, location, calendars, Bluetooth, Health | Not used | No usage strings, no tracking domains. |
@@ -31,13 +31,7 @@ File: `CollegeTracker/PrivacyInfo.xcprivacy`.
 - `NSPrivacyTracking`: false
 - `NSPrivacyTrackingDomains`: empty
 - `NSPrivacyAccessedAPITypes`: empty. This is intentional after the audit, not an untouched stub. If Xcode’s privacy report later names an API this review missed, add that reason then. Do not add `NSPrivacyAccessedAPICategoryUserDefaults` or file-timestamp reasons unless the report shows the app calls them.
-- `NSPrivacyCollectedDataTypes`: one entry
-  - Type: `NSPrivacyCollectedDataTypeOtherUserContent`
-  - Linked: false
-  - Tracking: false
-  - Purpose: `NSPrivacyCollectedDataTypePurposeAppFunctionality`
-
-That entry exists only because AI Feedback can send essay text off the device. If that screen is removed before the build you submit, delete the entry so the manifest matches the binary.
+- `NSPrivacyCollectedDataTypes`: empty. Essay AI no longer leaves the device, so Other User Content is not declared. If a later release turns `AIFeedbackService.networkEnabled` on, add `NSPrivacyCollectedDataTypeOtherUserContent` (not linked, not tracking, app functionality) before that binary ships, and update this file with it.
 
 ## App Store Connect — App Privacy
 
@@ -47,27 +41,19 @@ Answer from the binary you submit. For the tree as of this draft:
 
 **Data Linked to You:** none. There is no account, and the on-device store is not sent to the developer.
 
-**Data Not Linked to You:**
+**Data Not Linked to You:** none.
 
-- Other User Content
-- Used for App Functionality
-- Not used for tracking
-- Not used for third-party advertising
-
-Product identity of that content: essay text (and the optional prompt and school name sent with it) if the student uses AI Feedback.
-
-**Data Not Collected** (do not tick these as collected):
+**Data Not Collected:**
 
 - Name (the setup name stays on device / private iCloud)
-- Deadlines, school list, notes, and documents other than what AI Feedback sends
+- Deadlines, school list, notes, and documents, including essay text
 - Precise or coarse location
 - Contacts, photos, audio, browsing history
 - Identifiers for tracking, device ID for advertising
 - Purchase history (the app is free and has no in-app purchases)
+- Other User Content (essay feedback does not ship, and the Anthropic POST does not run)
 
 **Tracking:** No.
-
-If AI Feedback is removed from the shipping target, switch the nutrition label to **Data Not Collected** and remove the collected-data type from the manifest.
 
 ## Usage descriptions
 

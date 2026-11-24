@@ -2,15 +2,36 @@
 import SwiftUI
 import SwiftData
 
+enum CollegeSection: Int, Hashable {
+    case pathways = 0
+    case deadlines = 1
+    case documents = 2
+    case notes = 3
+}
+
+struct CollegeRoute: Hashable {
+    var collegeID: UUID
+    var section: CollegeSection
+    var deadlineID: UUID?
+}
+
 struct CollegeDetailView: View {
     @Bindable var college: College
     @Environment(\.modelContext) private var context
     @State private var showAddDeadline = false
     @State private var showAddDocument = false
     @State private var showEditNotes = false
-    @State private var selectedTab = 0
+    @State private var selectedTab: Int
+    private let highlightedDeadlineID: UUID?
+
+    init(college: College, initialSection: CollegeSection = .pathways, highlightedDeadlineID: UUID? = nil) {
+        self.college = college
+        _selectedTab = State(initialValue: initialSection.rawValue)
+        self.highlightedDeadlineID = highlightedDeadlineID
+    }
 
     var body: some View {
+        ScrollViewReader { proxy in
         ScrollView {
             VStack(spacing: 20) {
                 // Header card
@@ -27,14 +48,27 @@ struct CollegeDetailView: View {
                 .padding(.horizontal)
 
                 switch selectedTab {
-                case 0: PathwaySection(college: college)
-                case 1: DeadlinesSection(college: college, showAdd: $showAddDeadline)
-                case 2: DocumentsSection(college: college, showAdd: $showAddDocument)
-                case 3: NotesSection(college: college)
+                case CollegeSection.pathways.rawValue: PathwaySection(college: college)
+                case CollegeSection.deadlines.rawValue:
+                    DeadlinesSection(
+                        college: college,
+                        showAdd: $showAddDeadline,
+                        highlightedDeadlineID: highlightedDeadlineID
+                    )
+                case CollegeSection.documents.rawValue: DocumentsSection(college: college, showAdd: $showAddDocument)
+                case CollegeSection.notes.rawValue: NotesSection(college: college)
                 default: EmptyView()
                 }
             }
             .padding(.bottom, 32)
+        }
+        .task(id: highlightedDeadlineID) {
+            guard let id = highlightedDeadlineID, selectedTab == CollegeSection.deadlines.rawValue else { return }
+            try? await Task.sleep(for: .milliseconds(80))
+            withAnimation {
+                proxy.scrollTo(id, anchor: .center)
+            }
+        }
         }
         .navigationTitle(college.name)
         .navigationBarTitleDisplayMode(.large)
@@ -58,6 +92,7 @@ struct CollegeDetailView: View {
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
+                .accessibilityLabel(L10n.tr("More actions"))
             }
         }
         .sheet(isPresented: $showAddDeadline) {
@@ -171,6 +206,7 @@ struct CollegeHeaderCard: View {
 struct DeadlinesSection: View {
     @Bindable var college: College
     @Binding var showAdd: Bool
+    var highlightedDeadlineID: UUID? = nil
     @Environment(\.modelContext) private var context
 
     var sortedDeadlines: [Deadline] {
@@ -209,7 +245,14 @@ struct DeadlinesSection: View {
                 )
             } else {
                 ForEach(sortedDeadlines) { deadline in
-                    DeadlineRowView(deadline: deadline, collegeName: college.name)
+                    DeadlineRowView(deadline: deadline, collegeName: college.name, collegeID: college.id)
+                        .id(deadline.id)
+                        .overlay {
+                            if deadline.id == highlightedDeadlineID {
+                                RoundedRectangle(cornerRadius: 16)
+                                    .strokeBorder(Color.blue, lineWidth: 2)
+                            }
+                        }
                         .contextMenu {
                             Button(role: .destructive) {
                                 NotificationService.shared.cancelReminders(for: deadline)
@@ -229,6 +272,7 @@ struct DeadlinesSection: View {
 struct DeadlineRowView: View {
     @Bindable var deadline: Deadline
     let collegeName: String
+    var collegeID: UUID? = nil
 
     var body: some View {
         HStack(spacing: 14) {
@@ -267,7 +311,11 @@ struct DeadlineRowView: View {
                 if deadline.isComplete {
                     NotificationService.shared.cancelReminders(for: deadline)
                 } else {
-                    NotificationService.shared.scheduleReminders(for: deadline, collegeName: collegeName)
+                    NotificationService.shared.scheduleReminders(
+                        for: deadline,
+                        collegeName: collegeName,
+                        collegeID: collegeID ?? deadline.college?.id
+                    )
                 }
             } label: {
                 Image(systemName: deadline.isComplete ? "checkmark.circle.fill" : "circle")
@@ -361,15 +409,6 @@ struct DocumentRowView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                if document.type.supportsAIFeedback && !document.feedbackHistory.isEmpty {
-                    HStack(spacing: 2) {
-                        Image(systemName: "sparkles")
-                            .font(.caption2)
-                        Text("\(document.feedbackHistory.count)")
-                            .font(.caption2)
-                    }
-                    .foregroundStyle(.purple)
-                }
             }
 
             Image(systemName: "chevron.right")
@@ -397,6 +436,7 @@ struct NotesSection: View {
                 .padding(12)
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
                 .padding(.horizontal)
+                .accessibilityLabel(L10n.tr("Notes"))
 
             Text(L10n.tr("Jot down impressions, visit notes, or research."))
                 .font(.caption)
@@ -465,7 +505,7 @@ struct AddDeadlineView: View {
         college.deadlines.append(deadline)
         context.insert(deadline)
         if notify {
-            NotificationService.shared.scheduleReminders(for: deadline, collegeName: college.name)
+            NotificationService.shared.scheduleReminders(for: deadline, collegeName: college.name, collegeID: college.id)
         }
         try? context.save()
         dismiss()

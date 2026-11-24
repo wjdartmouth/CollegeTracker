@@ -1,4 +1,6 @@
 // EssayFeedbackView.swift
+// Not presented in the v1 student UI. Essay feedback is Coming soon; getFeedback
+// returns before any network call while AIFeedbackService.networkEnabled is false.
 import SwiftUI
 import SwiftData
 

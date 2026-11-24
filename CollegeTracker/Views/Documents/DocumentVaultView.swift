@@ -24,10 +24,6 @@ struct DocumentVaultView: View {
         return result.sorted { $0.lastEdited > $1.lastEdited }
     }
 
-    var essaysNeedingFeedback: [Document] {
-        allDocuments.filter { $0.type.supportsAIFeedback && $0.feedbackHistory.isEmpty && !$0.content.isEmpty }
-    }
-
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -48,27 +44,6 @@ struct DocumentVaultView: View {
                     .padding(.vertical, 10)
                 }
 
-                if !essaysNeedingFeedback.isEmpty && selectedType == nil && searchText.isEmpty {
-                    // Nudge banner
-                    HStack {
-                        Image(systemName: "sparkles")
-                            .foregroundStyle(.purple)
-                        Text(L10n.plural(
-                            essaysNeedingFeedback.count,
-                            one: "%lld essay ready for AI feedback",
-                            other: "%lld essays ready for AI feedback"
-                        ))
-                            .font(.subheadline)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.horizontal)
-                    .padding(.vertical, 10)
-                    .background(Color.purple.opacity(0.08))
-                }
-
                 List {
                     ForEach(filteredDocuments) { doc in
                         NavigationLink(destination: EssayEditorView(document: doc)) {
@@ -83,8 +58,10 @@ struct DocumentVaultView: View {
                     if filteredDocuments.isEmpty {
                         EmptyStateView(
                             icon: "folder",
-                            title: L10n.tr("No documents"),
-                            subtitle: L10n.tr("Add essays from a college's page")
+                            title: allDocuments.isEmpty ? L10n.tr("No documents") : L10n.tr("No matching documents"),
+                            subtitle: allDocuments.isEmpty
+                                ? L10n.tr("Add essays from a college's page")
+                                : L10n.tr("Try another name or document type")
                         )
                     }
                 }
@@ -102,10 +79,10 @@ struct VaultDocumentRow: View {
             // Type icon
             ZStack {
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(document.type.supportsAIFeedback ? Color.purple.opacity(0.1) : Color.blue.opacity(0.1))
+                    .fill(Color.blue.opacity(0.1))
                     .frame(width: 44, height: 44)
                 Image(systemName: document.type.icon)
-                    .foregroundStyle(document.type.supportsAIFeedback ? .purple : .blue)
+                    .foregroundStyle(.blue)
             }
 
             VStack(alignment: .leading, spacing: 4) {
@@ -138,24 +115,6 @@ struct VaultDocumentRow: View {
                     Text(L10n.format("%lldw", document.wordCount))
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                }
-
-                if document.type.supportsAIFeedback {
-                    if document.feedbackHistory.isEmpty {
-                        if !document.content.isEmpty {
-                            Image(systemName: "sparkles")
-                                .font(.caption)
-                                .foregroundStyle(.purple.opacity(0.6))
-                        }
-                    } else {
-                        HStack(spacing: 2) {
-                            Image(systemName: "sparkles")
-                                .font(.caption2)
-                            Text("\(document.feedbackHistory.count)")
-                                .font(.caption2)
-                        }
-                        .foregroundStyle(.purple)
-                    }
                 }
             }
         }

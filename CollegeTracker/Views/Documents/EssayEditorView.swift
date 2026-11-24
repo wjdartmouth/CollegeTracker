@@ -5,11 +5,13 @@ import SwiftData
 struct EssayEditorView: View {
     @Bindable var document: Document
     @Environment(\.modelContext) private var context
-    @State private var showFeedback = false
-    @State private var isSaving = false
 
     var body: some View {
         VStack(spacing: 0) {
+            if document.type.supportsAIFeedback {
+                EssayAIComingSoonBanner()
+            }
+
             // Word count bar
             WordCountBar(document: document)
                 .padding(.horizontal)
@@ -30,21 +32,6 @@ struct EssayEditorView: View {
         }
         .navigationTitle(document.title)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                if document.type.supportsAIFeedback {
-                    Button {
-                        showFeedback = true
-                    } label: {
-                        Label(L10n.tr("AI Feedback"), systemImage: "sparkles")
-                    }
-                    .disabled(document.content.isEmpty)
-                }
-            }
-        }
-        .sheet(isPresented: $showFeedback) {
-            EssayFeedbackView(document: document)
-        }
     }
 
     private func scheduleSave() {
@@ -53,6 +40,34 @@ struct EssayEditorView: View {
             try? await Task.sleep(for: .seconds(1))
             try? context.save()
         }
+    }
+}
+
+// MARK: - Essay AI gate
+
+/// Visible, non-interactive stand-in for essay AI. Does not present `EssayFeedbackView`.
+struct EssayAIComingSoonBanner: View {
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "sparkles")
+            Text(L10n.tr("AI Feedback"))
+            Text(L10n.tr("Coming soon"))
+                .font(.caption2.bold())
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(Color.orange.opacity(0.2))
+                .foregroundStyle(.orange)
+                .clipShape(Capsule())
+            Spacer(minLength: 0)
+        }
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+        .padding(.horizontal)
+        .padding(.vertical, 10)
+        .background(Color(.systemGray6))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(L10n.tr("AI Feedback, coming soon"))
+        .accessibilityHint(L10n.tr("Essay feedback is coming soon. This version does not send essay text off this iPhone."))
     }
 }
 
