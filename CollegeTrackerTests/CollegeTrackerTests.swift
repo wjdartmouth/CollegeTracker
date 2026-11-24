@@ -549,4 +549,71 @@ struct LocalizationCatalogTests {
             #expect(keys.contains(type))
         }
     }
+
+    @Test func privacyManifestCollectsNothing() throws {
+        let url = repoFile("CollegeTracker/PrivacyInfo.xcprivacy")
+        let text = try String(contentsOf: url, encoding: .utf8)
+        #expect(text.contains("NSPrivacyCollectedDataTypeOtherUserContent") == false)
+        #expect(text.contains("<key>NSPrivacyCollectedDataTypes</key>"))
+        #expect(text.contains("<key>NSPrivacyTracking</key>"))
+        #expect(text.contains("<false/>"))
+    }
+}
+
+struct EssayAIShippingTests {
+    private func repoFile(_ name: String) -> URL {
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent(name)
+    }
+
+    @Test @MainActor func essayFeedbackScreenIsNotPresented() throws {
+        let editor = try String(contentsOf: repoFile("CollegeTracker/Views/Documents/EssayEditorView.swift"), encoding: .utf8)
+        let vault = try String(contentsOf: repoFile("CollegeTracker/Views/Documents/DocumentVaultView.swift"), encoding: .utf8)
+        let detail = try String(contentsOf: repoFile("CollegeTracker/Views/Colleges/CollegeDetailView.swift"), encoding: .utf8)
+        #expect(editor.contains("EssayFeedbackView(") == false)
+        #expect(vault.contains("EssayFeedbackView(") == false)
+        #expect(detail.contains("EssayFeedbackView(") == false)
+        #expect(editor.contains("Coming soon"))
+    }
+
+    @Test @MainActor func networkStaysOffAndDoesNotPost() async {
+        #expect(AIFeedbackService.networkEnabled == false)
+        let request = FeedbackRequest(
+            essayText: "A short essay that must stay on device.",
+            wordLimit: 100,
+            collegeName: "The University of Hong Kong",
+            promptText: "Why this school?",
+            focusArea: .overall
+        )
+        do {
+            _ = try await AIFeedbackService.shared.getFeedback(for: request)
+            Issue.record("v1 must not request essay feedback")
+        } catch AIError.unavailable {
+        } catch {
+            Issue.record("Unexpected error: \(error)")
+        }
+    }
+}
+
+struct NotificationPayloadTests {
+    @Test @MainActor func roundTripsCollegeAndDeadline() {
+        let deadline = UUID()
+        let college = UUID()
+        let info = NotificationPayload.userInfo(deadlineID: deadline, collegeID: college)
+        #expect(NotificationPayload.link(from: info) == DeadlineNotificationLink(collegeID: college, deadlineID: deadline))
+    }
+
+    @Test @MainActor func deadlineAloneStillLinks() {
+        let deadline = UUID()
+        let link = NotificationPayload.link(from: [NotificationPayload.deadlineIDKey: deadline.uuidString])
+        #expect(link?.deadlineID == deadline)
+        #expect(link?.collegeID == nil)
+    }
+
+    @Test @MainActor func rejectsAMissingOrInvalidDeadline() {
+        #expect(NotificationPayload.link(from: [:]) == nil)
+        #expect(NotificationPayload.link(from: [NotificationPayload.deadlineIDKey: "not-a-uuid"]) == nil)
+    }
 }

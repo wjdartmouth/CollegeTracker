@@ -87,9 +87,19 @@ class AIFeedbackService {
     static let shared = AIFeedbackService()
     private init() {}
 
+    /// v1 does not contact Anthropic. The request code stays in this file for a later release.
+    static let networkEnabled = false
+
     private let endpoint = URL(string: "https://api.anthropic.com/v1/messages")!
 
     func getFeedback(for request: FeedbackRequest) async throws -> EssayFeedback {
+        guard Self.networkEnabled else {
+            throw AIError.unavailable
+        }
+        return try await postFeedback(for: request)
+    }
+
+    private func postFeedback(for request: FeedbackRequest) async throws -> EssayFeedback {
         let systemPrompt = """
         You are an expert college admissions counselor with 15+ years helping students get into top universities.
         You give specific, actionable, encouraging feedback on college essays.
@@ -195,11 +205,14 @@ class AIFeedbackService {
 // MARK: - Errors
 
 enum AIError: LocalizedError {
+    case unavailable
     case apiError(String)
     case parseError
 
     var errorDescription: String? {
         switch self {
+        case .unavailable:
+            return L10n.tr("Essay feedback is coming soon. This version does not send essay text off this iPhone.")
         case .apiError(let msg): return msg
         case .parseError: return L10n.tr("Could not parse AI response.")
         }

@@ -4,7 +4,7 @@
 
 **App:** College Tracker (日本語: 進学トラッカー, 繁體中文: 升學追蹤)  
 **Bundle ID:** `edu.asu.jwang875.CollegeTracker`  
-**Draft date:** 15 November 2026  
+**Draft date:** 24 November 2026  
 **Operator:** the developer of College Tracker. This draft does not invent a company name, email address, phone number, or Japanese business address. The contact method for the published policy is the support URL on the App Store product page, which the developer will set in App Store Connect.
 
 This policy is written for students in Hong Kong and Japan. The interface languages are English, Japanese, and Traditional Chinese.
@@ -31,7 +31,7 @@ Turning off iCloud for the app, or deleting the app, is how you remove that copy
 
 ## Notifications
 
-Deadline reminders are scheduled **on the device** with Apple’s local notification system. They fire at 9:00 local time (30 days, 7 days, 1 day, and the day of an incomplete deadline that is still in the future). They are ordinary notifications, not Critical Alerts. The app does not send the content of a reminder to the developer. iOS asks you for notification permission; you can change that later in Settings.
+Deadline reminders are scheduled **on the device** with Apple’s local notification system. They fire at 9:00 local time (30 days, 7 days, 1 day, and the day of an incomplete deadline that is still in the future). They are ordinary notifications, not Critical Alerts. The app does not send the content of a reminder to the developer. iOS asks for notification permission. The app’s Settings tab shows whether reminders are on, and it can open iOS Settings if permission was denied.
 
 ## Catalog
 
@@ -39,11 +39,9 @@ School names, pathway descriptions, and related facts ship inside the app. The a
 
 Tapping a school website opens that address in the browser. That request is between you and the university’s site.
 
-## Essay feedback screen (read before you ship)
+## Essay feedback
 
-The app includes an AI Feedback screen. If you use it, the app sends the essay text, an optional prompt, the word count, the focus you picked, and the school name to Anthropic’s API at `api.anthropic.com`, so that service can generate feedback. The developer does not operate that API. No Anthropic API key is bundled in the repository, so the request cannot succeed until a key is configured.
-
-This screen is **not** described as a v1 feature in the App Store listing draft. If you remove the screen before release, delete this section and remove `NSPrivacyCollectedDataTypeOtherUserContent` from `CollegeTracker/PrivacyInfo.xcprivacy` and from the App Privacy answers.
+This version does not include essay feedback. Text you type in a document stays on this iPhone. The app does not send it to Anthropic or to any other service. A later version that does send essay text has to update this policy, the privacy manifest, and the App Privacy answers before that version is released.
 
 ## Tracking, ads, and accounts
 
@@ -54,11 +52,11 @@ This screen is **not** described as a v1 feature in the App Store listing draft.
 
 ## Hong Kong
 
-The Personal Data (Privacy) Ordinance (Cap. 486) applies to personal data that a data user collects. For the on-device store and private iCloud sync, the developer does not collect that data. If the AI Feedback screen ships and you use it, the essay content leaves the device and is handled by Anthropic under their terms; that is the disclosure for this draft. You can use the rest of the app without opening that screen.
+The Personal Data (Privacy) Ordinance (Cap. 486) applies to personal data that a data user collects. For the on-device store and private iCloud sync, the developer does not collect that data. This version does not send essay text off the device.
 
 ## Japan
 
-The Act on the Protection of Personal Information (個人情報保護法) applies when a business operator handles personal information. Data that never leaves your device, and data that syncs only to your private iCloud database, is not received by the developer. The same AI Feedback disclosure above is the exception if that screen ships.
+The Act on the Protection of Personal Information (個人情報保護法) applies when a business operator handles personal information. Data that never leaves your device, and data that syncs only to your private iCloud database, is not received by the developer. This version does not send essay text off the device. This draft does not invent a Japanese business name, address, phone number, or representative.
 
 ### 特定商取引法
 
@@ -66,7 +64,7 @@ This version is free and has no in-app purchases, so this draft does not include
 
 ## Children
 
-Students using the app may be under 18. The app does not create an account and does not ask for a date of birth. Do not type information into the AI Feedback screen if you do not want that text sent to Anthropic.
+Students using the app may be under 18. The app does not create an account and does not ask for a date of birth. Document text stays on the device in this version.
 
 ## Changes
 

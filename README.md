@@ -1,6 +1,6 @@
 # 🎓 College Tracker
 
-An advanced iOS 17+ college application management app for students and counselors. Track deadlines, manage essays with AI-powered feedback, compare schools side-by-side, and visualize your progress — all synced across devices via iCloud.
+An iOS college application app for students in Hong Kong and Japan. Track schools, deadlines, and documents, with local reminders. Counselor sharing and essay AI are not in this version.
 
 **Ship status:** see [SHIP_STATUS.md](SHIP_STATUS.md). The app is a student-first client for the bundled Hong Kong + Japan catalog (839 schools: 21 Hong Kong SAR + 818 Japan) with searchable add, catalog facts, and JUPAS / EJU (and related) pathway screens. Counselor CloudKit sharing and essay AI are deferred.
 
@@ -15,12 +15,13 @@ An advanced iOS 17+ college application management app for students and counselo
 - **College catalog** — Search and add from 839 bundled Hong Kong + Japan schools (college-data: 21 Hong Kong SAR + 818 Japan). Custom entry remains as a fallback.
 - **9 application statuses** — Researching → In Progress → Submitted → Interviewing → Accepted / Waitlisted / Deferred / Rejected → Enrolled
 - **Deadline tracking** — Region-aware types: JUPAS and Non-JUPAS for Hong Kong; EJU, Common Test, Comprehensive (AO), and School Recommendation for Japan; plus scholarship, financial aid, interview, custom, and US ED/EA/RD. Urgency color-coding (red < 7 days, amber < 30 days, green otherwise).
-- **Smart notifications** — Local reminders at 9:00, 30 days / 1 week / 1 day / day-of, titled with the deadline type (JUPAS, EJU, etc.). Regular notifications only — no Critical Alerts entitlement. Reminders reschedule when the student tabs appear and cancel when a deadline is completed or deleted.
+- **Smart notifications** — Local reminders at 9:00, 30 days / 1 week / 1 day / day-of, titled with the deadline type (JUPAS, EJU, etc.). Regular notifications only — no Critical Alerts entitlement. Tapping a reminder opens that school’s deadlines. Reminders reschedule when the student tabs appear and cancel when a deadline is completed or deleted. Settings shows whether they are on.
 - **Document vault** — Region-aware types including JUPAS applications, personal statements, school reports, EJU scores, transcripts, recommendations, and (still available) Common App / supplemental essays.
 - **Essay editor** — Full-screen editor with live word count progress bar and word limit tracking
-- **AI essay feedback** — Claude-powered analysis with score (X/10), strengths, areas to improve, specific suggestions, and encouragement
+- **Essay feedback** — Coming soon. The editor shows that label and does not send essay text off the iPhone. The request code remains in the tree with the network call disabled.
 - **College comparison** — Side-by-side table for up to 3 schools
 - **Progress charts** — Donut chart of application statuses, chronological deadlines-by-month, document progress (JUPAS / personal statement / EJU), quick stats grid
+- **Settings** — Reminder permission and status, an in-app privacy policy, and the app version
 
 ### For Counselors
 - **Coming soon** — Onboarding offers a Counselor chip marked Coming soon. Existing counselor profiles see a gate screen and can continue as a student. CloudKit student-sharing is deferred; there is no fake local-UUID "iCloud sharing".
@@ -69,11 +70,12 @@ CollegeTracker/
 │   │   └── CollegeDetailView.swift    Segmented tabs: pathways, deadlines, documents, notes
 │   ├── Documents/
 │   │   ├── DocumentVaultView.swift    Cross-college document vault with type filters
-│   │   │                              and AI feedback nudge banner
-│   │   └── EssayEditorView.swift      Full-screen editor, word count progress bar
+│   │   └── EssayEditorView.swift      Full-screen editor, word count progress bar.
+│   │                                  Essay AI shows Coming soon and is not tappable.
+│   ├── Settings/
+│   │   └── SettingsView.swift         Reminder status, privacy policy, version
 │   ├── AIFeedback/
-│   │   └── EssayFeedbackView.swift    Focus area picker, AI request, score badge,
-│   │                                   structured feedback sections, history log
+│   │   └── EssayFeedbackView.swift    Kept in the tree. Not presented in v1.
 │   └── Charts/
 │       └── ProgressDashboardView.swift  Overall progress ring, status donut chart,
 │                                         deadlines-by-month bar chart, document progress,
@@ -91,7 +93,7 @@ CollegeTracker/
 | `@Query` | All list views | Live model fetching that auto-refreshes UI on changes |
 | `@Bindable` | Detail views | Direct two-way binding to SwiftData model objects |
 | `CloudKit (.automatic)` | `ModelContainer` | Zero-code iCloud sync — SwiftData handles it |
-| `Anthropic API` | `AIFeedbackService` | On-demand essay analysis via `claude-sonnet` |
+| `Anthropic API` | `AIFeedbackService` | Present, disabled in v1 (`networkEnabled == false`) |
 | `UNUserNotificationCenter` | `NotificationService` | Multi-interval deadline reminders |
 | `Charts` framework | `ProgressDashboardView` | Donut + bar charts from native iOS 16 Charts |
 
@@ -134,7 +136,9 @@ One AI review session.
 
 ## 🤖 AI Essay Feedback
 
-`AIFeedbackService` calls the Anthropic API (`claude-sonnet-4-20250514`) with a structured system prompt that forces a consistent response format:
+Not in v1. The student UI does not present `EssayFeedbackView`. `AIFeedbackService.networkEnabled` is `false`, so `getFeedback` returns before any network call. Do not add an API key for this release.
+
+The disabled request path still targets the Anthropic API (`claude-sonnet-4-20250514`) with a structured system prompt that forces a consistent response format:
 
 ```
 SCORE: X/10
@@ -152,7 +156,7 @@ The service then parses that format using regex and string extraction into a `Pa
 **Available focus areas:**
 Overall Review · Structure & Flow · Authentic Voice · Prompt Alignment · Grammar & Style · Conciseness
 
-> ⚠️ The Anthropic API key is handled by the backend proxy in the Claude.ai environment. For standalone use, add your API key to the `URLRequest` headers in `AIFeedbackService.swift`.
+> ⚠️ Do not add an Anthropic API key for the Hong Kong / Japan v1 ship. Turning the network call back on also means putting Other User Content back in `PrivacyInfo.xcprivacy` and the App Privacy answers.
 
 ---
 
@@ -232,11 +236,7 @@ Required for SwiftData, `@Bindable`, `@Query`, and the Charts framework.
 - [ ] CloudKit container ID — confirm `iCloud.edu.asu.jwang875.CollegeTracker` (or migrate to `iCloud.com.jianwang.CollegeTracker` before creating the App Store record)
 - [ ] Bundle ID — confirm `edu.asu.jwang875.CollegeTracker` (or migrate to `com.jianwang.CollegeTracker` before creating the App Store record)
 - [ ] Development Team — set in both Signing & Capabilities
-- [ ] Anthropic API key — add to `AIFeedbackService.swift` `URLRequest` headers for standalone use:
-  ```swift
-  urlRequest.setValue("Bearer YOUR_API_KEY", forHTTPHeaderField: "x-api-key")
-  urlRequest.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
-  ```
+- [ ] Essay AI — leave `AIFeedbackService.networkEnabled` false for v1. Do not add an API key.
 - [ ] App icon — add to `Assets.xcassets`
 
 ---
@@ -254,15 +254,9 @@ NotificationService.scheduleReminders() — 4 notifications per deadline
     ↓
 DashboardView @Query refreshes automatically
 
-User requests AI essay feedback
+Essay feedback (not in v1)
     ↓
-EssayFeedbackView → AIFeedbackService.getFeedback()
-    ↓
-POST /v1/messages → Anthropic API (claude-sonnet-4-20250514)
-    ↓
-Response parsed → EssayFeedback SwiftData record saved
-    ↓
-feedbackHistory renders score badge + structured sections
+Editor shows Coming soon. getFeedback throws before URLSession.
 ```
 
 ---
@@ -291,7 +285,7 @@ feedbackHistory renders score badge + structured sections
 | CloudKit | iOS 17 | iCloud sync (via SwiftData `.automatic`) |
 | Charts | iOS 16+ | Donut + bar charts |
 | UserNotifications | iOS 10+ | Multi-interval deadline reminders |
-| Anthropic API | claude-sonnet-4-20250514 | AI essay feedback |
+| Anthropic API | not called in v1 | Essay feedback code is present and disabled |
 
 ---
 

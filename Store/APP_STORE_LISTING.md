@@ -6,7 +6,7 @@ The app record is not created yet. Keep the bundle ID `edu.asu.jwang875.CollegeT
 
 Primary markets for this version: Hong Kong and Japan. Localizations to fill in: English (U.K. or U.S.), Japanese, and Traditional Chinese. Do not add Simplified Chinese for v1.
 
-Counselor tools are not a listed feature. Do not advertise essay AI. The binary still contains an AI Feedback screen; see `Store/APP_PRIVACY.md` before you decide whether that screen ships.
+Counselor tools are not a listed feature. Do not advertise essay AI. The shipping UI shows essay feedback as Coming soon and does not send essay text off the device. See `Store/APP_PRIVACY.md`.
 
 Character limits below are the App Store Connect limits. Counts were checked when this draft was written.
 

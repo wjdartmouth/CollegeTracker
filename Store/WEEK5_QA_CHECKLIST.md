@@ -11,7 +11,7 @@ The catalog under test is the 12 November 2026 bundle: 839 schools (21 Hong Kong
 ## 1. Onboarding and counselor gate
 
 - [ ] First launch asks for a name and offers Student, plus Counselor marked Coming soon.
-- [ ] Continuing as Student reaches the student tabs (Dashboard, Colleges, Documents, Progress).
+- [ ] Continuing as Student reaches the student tabs (Dashboard, Colleges, Documents, Progress, Settings).
 - [ ] The Counselor chip cannot start a counselor session from onboarding.
 - [ ] If an existing counselor profile is present, the gate explains that CloudKit sharing is deferred and **Continue as student** switches the profile to student.
 
@@ -51,22 +51,25 @@ The catalog under test is the 12 November 2026 bundle: 839 schools (21 Hong Kong
 - [ ] Reminder titles name the type (for example “JUPAS in 1 week”, “EJU is tomorrow”).
 - [ ] Completing a deadline cancels its pending reminders. Un-completing schedules them again. Deleting a deadline cancels them.
 - [ ] Opening the student tabs reschedules reminders for incomplete upcoming deadlines (permission granted later, or reminders lost after reinstall).
-- [ ] If permission is denied, the dashboard banner explains how to enable regular reminders in Settings. The banner does not appear while permission is still undetermined (first launch).
+- [ ] If permission is denied, the dashboard banner explains how to enable regular reminders and opens the in-app Settings tab. The banner does not appear while permission is still undetermined (first launch).
+- [ ] Settings shows On, Off, or Not yet asked. Off offers a button that opens iOS Settings. Not yet asked can request permission. These stay regular notifications, not Critical Alerts.
+- [ ] Tapping a delivered reminder opens Colleges on that school’s Deadlines section. A deadline card on the dashboard opens the same place.
 
-## 6. Documents and essay AI (decision needed)
+## 6. Documents, essay AI, and Settings
 
 - [ ] The document vault lists documents across schools and can open the editor with a live word count when a limit is set.
-- [ ] AI Feedback is still reachable from a document. No Anthropic API key is bundled, so a live request is expected to fail until a key is configured.
-- [ ] Decision before the TestFlight build you care about: keep the screen and the Other User Content privacy entry, or remove both. This is not a marketed v1 feature.
+- [ ] An essay-shaped document shows AI Feedback as Coming soon. It does not open a feedback screen and does not send the essay anywhere. The vault does not nudge you to request AI feedback.
+- [ ] Settings includes a privacy policy you can read in the app, and a version row. The policy does not list a postal address.
+- [ ] `PrivacyInfo.xcprivacy` has an empty collected-data list (no Other User Content). Confirm the Xcode privacy report matches `Store/APP_PRIVACY.md` on the Mac checklist.
 
 ## 7. Localization and icon
 
-- [ ] English, Japanese, and Traditional Chinese schemes each show translated onboarding, tabs, catalog picker, pathway disclaimer, empty-deadline copy, and (if triggered) the notification-denied banner and a reminder title.
+- [ ] English, Japanese, and Traditional Chinese schemes each show translated onboarding, tabs (including Settings), catalog picker, pathway disclaimer, empty-deadline copy, the in-app privacy policy, and (if triggered) the notification-denied banner and a reminder title.
 - [ ] Home-screen name is College Tracker / 進学トラッカー / 升學追蹤 in those languages. Do not add a Simplified Chinese scheme for this pass.
 - [ ] Home-screen icon renders in light, dark, and tinted modes from the 1024×1024 asset catalog images.
 
 ## 8. Automated tests
 
-- [ ] `CollegeTrackerTests` pass: catalog, pathways, reminder plan, CRM metrics, and string-catalog completeness (en / ja / zh-Hant).
+- [ ] `CollegeTrackerTests` pass: catalog, pathways, reminder plan, CRM metrics, string-catalog completeness (en / ja / zh-Hant), the essay-AI gate, notification payload round-trip, and the privacy manifest having no collected types.
 
 If a box fails, note the build, language, and steps in the pull request or in `SHIP_STATUS.md`. Do not mark this checklist done from a repo-only reading.

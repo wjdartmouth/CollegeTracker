@@ -3,7 +3,7 @@
 **Thesis:** CollegeTracker is the mobile client for the [college-data](https://github.com/wjdartmouth/college-data) catalog (Hong Kong + Japan first). US Common App polish, counselor CloudKit sharing, and essay AI are deferred unless asked.
 
 **Deadline:** Sunday 21 December 2026
-**Today (this update):** Monday 16 November 2026 (Asia/Hong_Kong) — 35 days left. Week 4 is on `main` ([PR #5](https://github.com/wjdartmouth/CollegeTracker/pull/5) merged 16 November 2026, 07:41 HKT, merge commit `10025473`). Entering Week 5 early (end-to-end QA, Mac / TestFlight steps; calendar window ~8–14 Dec).
+**Today (this update):** Tuesday 24 November 2026 — 27 days left. Weeks 1–4 are on `main` ([PR #5](https://github.com/wjdartmouth/CollegeTracker/pull/5), merge commit `10025473`). The 16 November Week 5 QA docs (`58d0e79`) are included here. This update is pre-TestFlight hardening. **GitHub Actions were explicitly skipped:** no workflow files were added or edited, and CI was not set up or waited on.
 **Plan:** 6-week ship. Weeks 1–4 are on `main`.
 
 This document is a code/repo status report. **This environment has no Mac Xcode.** Do not treat anything here as an Xcode build, Simulator, TestFlight, or App Store Connect success.
@@ -114,6 +114,33 @@ Week 5 theme is an end-to-end QA checklist, Mac / TestFlight steps for Jian, and
 
 ---
 
+## Pre-TestFlight hardening (24 Nov 2026)
+
+Branched from `ship/week5-qa-docs` (`58d0e79`). That commit was a clean fast-forward of `main` (`10025473`): Week 5 checklists and this status file only. Those docs are in this branch so the pull request into `main` brings them along.
+
+GitHub Actions were explicitly skipped. Nothing under `.github/workflows` was added, edited, or enabled. CI was not set up and was not waited on.
+
+1. **Essay AI is not in the v1 UI**
+   - `EssayFeedbackView` stays in the tree and is not presented. An essay-shaped document shows a non-interactive **AI Feedback · Coming soon** banner, the same idea as the counselor gate.
+   - The document vault no longer nudges students to request feedback, and document rows no longer show a sparkles count.
+   - `AIFeedbackService.networkEnabled` is `false`. `getFeedback` throws before `URLSession`, so the POST to `api.anthropic.com` does not run.
+   - `NSPrivacyCollectedDataTypeOtherUserContent` was removed. `NSPrivacyCollectedDataTypes` is empty. `Store/APP_PRIVACY.md` and `Store/PRIVACY_POLICY.md` match that.
+2. **Settings tab**
+   - Reminder status: On, Off, or Not yet asked. If iOS has not asked, the student can turn reminders on from here. If iOS has denied them, the button opens iOS Settings. Launch still requests permission, as in Week 3.
+   - The dashboard “reminders are off” banner opens this tab.
+   - In-app privacy policy (no postal address, no invented Japanese business address).
+   - Version row reads the bundle short version and build (`1.0 (1)` in the project file).
+   - New strings are in `Localizable.xcstrings` for English, Japanese, and Traditional Chinese. No `zh-Hans`.
+3. **Notification taps open the school**
+   - Before this change, `NotificationDelegate` only presented a banner in the foreground. The payload had a deadline id and nothing consumed it.
+   - Reminders now store `deadlineID` and `collegeID`. A tap switches to Colleges and pushes that school’s Deadlines section, scrolling to the deadline when it is still on the phone. Dashboard deadline cards open the same place.
+4. **Small student-flow polish**
+   - Colleges and Documents distinguish “nothing here yet” from “nothing matched the search”. Progress has an empty state when there are no schools.
+   - Accessibility labels on the school overflow menu, the notes field, deadline cards, and the reminders-off banner.
+5. **Not done here:** no Xcode build, Simulator, unit-test execution, privacy report, TestFlight, or App Store Connect session. Bundle ID `edu.asu.jwang875.CollegeTracker` and CloudKit container `iCloud.edu.asu.jwang875.CollegeTracker` were not rewritten. Mainland China catalog data was not pulled. Counselor stays Coming soon. Notifications stay regular local alerts, not Critical Alerts. No in-app purchase.
+
+---
+
 ## Identifiers (confirm before ASC)
 
 | Item | Current value in repo | Note |
@@ -125,22 +152,24 @@ Week 5 theme is an end-to-end QA checklist, Mac / TestFlight steps for Jian, and
 | iOS deployment target | 26.2 | As set in the pbxproj (Xcode 26). Confirm this is intended. README previously said 17.0; 17+ is the API floor, 26.2 is the current project setting. |
 | App icon | 1024×1024 light, dark, tinted | `AppIcon.appiconset`. Not viewed on a device. |
 | Localization | `en`, `ja`, `zh-Hant` | `Localizable.xcstrings` and `InfoPlist.xcstrings`. No zh-Hans. |
-| Privacy manifest | Audited in-repo | `PrivacyInfo.xcprivacy` and `Store/APP_PRIVACY.md`. Xcode privacy report not run. |
+| Privacy manifest | No collected data types | Essay AI POST is not reachable. `PrivacyInfo.xcprivacy` and `Store/APP_PRIVACY.md`. Xcode privacy report not run. |
 
 ---
 
 ## Remaining MVP gaps
 
-- Weeks 1–4 are on `main` (`10025473`). Week 5 Mac / TestFlight work has not started on a Mac.
+- Weeks 1–4 are on `main` (`10025473`). This branch adds the Week 5 checklists and the 24 Nov hardening. It is not merged. Mac / TestFlight work has not started.
+- GitHub Actions remain unset on purpose. Do not treat a missing workflow as an oversight for this pass.
 - No in-app catalog refresh / remote update path (data is compile-time bundled). college-data gained Mainland China tuition/name polish on 12–13 November after the last catalog refresh; that data is out of the HK+Japan MVP bundle and was not pulled in.
 - SwiftData schema added optional College fields in Week 1; existing installs will migrate, but this was not run on a device.
 - Counselor dashboard code remains in the tree but is unreachable from onboarding (Coming soon). Copy is localized.
-- Essay AI (`AIFeedbackService`) still present and still reachable from a document. It is not a marketed v1 feature. The privacy manifest declares the essay POST. Remove the screen before submission if it should not ship, and then remove that collected-data entry.
+- Essay AI source remains in the tree and is unreachable in the shipping UI. The network call does not run. The privacy manifest no longer declares Other User Content. Do not flip `AIFeedbackService.networkEnabled` or reattach the screen without putting that collected-data type back.
+- Settings (reminders, privacy policy, version) is in the student tabs. It has not been smoke-tested in Xcode.
 - Localization and the app icon are in the repo. They have not been smoke-tested in Xcode.
 - No entitlements / Push Notifications / iCloud capability wired in Xcode. Development Team is unset.
-- Tests were written but **not executed** (no Xcode on this box), including the string-catalog tests.
+- Tests were written but **not executed** (no Xcode on this box), including the string-catalog tests and the new essay-AI / notification-payload / privacy-manifest tests.
 - Pathway timelines are descriptive text, not auto-created `Deadline` rows (calendars change every year).
-- Store listing, privacy policy, and App Privacy answers are drafts under `Store/`. They have not been pasted into App Store Connect. The privacy policy has no hosted URL yet.
+- Store listing, privacy policy, and App Privacy answers are drafts under `Store/`. They have not been pasted into App Store Connect. The privacy policy has no hosted URL yet. The in-app policy is the student-readable copy and matches the “data not collected” draft.
 
 ---
 
@@ -149,7 +178,7 @@ Week 5 theme is an end-to-end QA checklist, Mac / TestFlight steps for Jian, and
 1. Open the project in Xcode, select a Development Team, and confirm the bundle ID stays `edu.asu.jwang875.CollegeTracker` unless you deliberately choose otherwise **before** creating the App Store Connect record.
 2. Signing & Capabilities: add **iCloud (CloudKit)** with container `iCloud.edu.asu.jwang875.CollegeTracker` (or the chosen replacement) and **Push Notifications** only if CloudKit sync needs it. This will create an entitlements file. Do not enable Critical Alerts.
 3. Build and run from current `main`: confirm both JSON files are in the app bundle, picker search works, a catalog school’s Pathways tab shows official JUPAS / non-JUPAS or EJU routes plus type / tuition / majors (including one of the new HK013–HK021 schools), and that adding a JUPAS or EJU deadline schedules regular 9:00 local reminders (no Critical Alerts prompt). Repeat in English, Japanese, and Traditional Chinese.
-4. Run `CollegeTrackerTests` (catalog, pathways, reminder plan, CRM metrics, string catalog).
+4. Run `CollegeTrackerTests` (catalog, pathways, reminder plan, CRM metrics, string catalog, essay-AI gate, notification payload, privacy manifest).
 5. Confirm the 1024×1024 icon on the home screen (light, dark, tinted). The images are already in the asset catalog.
 6. App Store Connect: create the app record for the confirmed bundle ID. Paste `Store/APP_STORE_LISTING.md`. Host `Store/PRIVACY_POLICY.md` first.
 7. Generate an Xcode privacy report and match it to `PrivacyInfo.xcprivacy` and `Store/APP_PRIVACY.md` before submission.
@@ -160,15 +189,16 @@ The Mac steps are `Store/WEEK5_MAC_CHECKLIST.md`. The student-flow ticks are `St
 
 ## Next 1–3 actions
 
-1. On a Mac, work through `Store/WEEK5_MAC_CHECKLIST.md` and `Store/WEEK5_QA_CHECKLIST.md`: team, bundle ID, CloudKit capability, en/ja/zh-Hant smoke test, local notifications, unit tests, privacy report, TestFlight.
-2. Confirm whether the bundle ID stays `edu.asu.jwang875.CollegeTracker` before creating the App Store Connect record.
-3. Decide whether AI Feedback ships. If it does not, remove the screen and the Other User Content entry before the TestFlight build you care about.
+1. Review this pull request into `main`. It includes the Week 5 checklists and the 24 Nov hardening. Do not merge it from this environment.
+2. On a Mac, work through `Store/WEEK5_MAC_CHECKLIST.md` and `Store/WEEK5_QA_CHECKLIST.md`: team, bundle ID, CloudKit capability, en/ja/zh-Hant smoke test (including Settings), local notifications and a reminder tap, unit tests, privacy report, TestFlight. Leave GitHub Actions off for this pass.
+3. Confirm the bundle ID stays `edu.asu.jwang875.CollegeTracker` before creating the App Store Connect record. App Privacy answers are now **Data Not Collected**.
 
 ---
 
 ## Explicit non-claims
 
 - No Xcode build, Simulator run, archive, TestFlight upload, or App Store Connect submission was performed.
-- Catalog and pathway JSON were last generated on 12 November 2026 and inspected (839 colleges; 3,342 pathway rows = 3,276 Japan including JP_SYSTEM + 66 official HK including HK_SYSTEM; unique ids). Unit tests were added or updated (including Week 3 reminder and CRM metric tests, and Week 4 string-catalog tests) but have not been executed here.
+- GitHub Actions were not added, edited, enabled, or waited on.
+- Catalog and pathway JSON were last generated on 12 November 2026 and inspected (839 colleges; 3,342 pathway rows = 3,276 Japan including JP_SYSTEM + 66 official HK including HK_SYSTEM; unique ids). Unit tests were added or updated (including Week 3 reminder and CRM metric tests, Week 4 string-catalog tests, and 24 Nov essay-AI, notification-payload, and privacy-manifest tests) but have not been executed here.
 - The app icon was drawn and placed in the asset catalog. It was not installed on a device.
 - Store listing and privacy documents are drafts in `Store/`. They were not submitted.

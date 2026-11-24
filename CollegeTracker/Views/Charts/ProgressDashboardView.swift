@@ -47,30 +47,32 @@ struct ProgressDashboardView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
+                    if colleges.isEmpty {
+                        EmptyStateView(
+                            icon: "chart.pie",
+                            title: L10n.tr("No progress yet"),
+                            subtitle: L10n.tr("Add a school from the Colleges tab to see progress here.")
+                        )
+                    } else {
+                        OverallProgressCard(progress: overallProgress, collegeCount: colleges.count)
+                            .padding(.horizontal)
 
-                    // Overall progress ring
-                    OverallProgressCard(progress: overallProgress, collegeCount: colleges.count)
-                        .padding(.horizontal)
+                        if !statusBreakdown.isEmpty {
+                            StatusDonutCard(data: statusBreakdown)
+                                .padding(.horizontal)
+                        }
 
-                    // Status donut chart
-                    if !statusBreakdown.isEmpty {
-                        StatusDonutCard(data: statusBreakdown)
+                        if !deadlinesByMonth.isEmpty {
+                            DeadlineBarChartCard(data: deadlinesByMonth)
+                                .padding(.horizontal)
+                        }
+
+                        DocumentProgressCard(stats: documentStats)
+                            .padding(.horizontal)
+
+                        QuickStatsGrid(colleges: colleges)
                             .padding(.horizontal)
                     }
-
-                    // Deadlines by month bar chart
-                    if !deadlinesByMonth.isEmpty {
-                        DeadlineBarChartCard(data: deadlinesByMonth)
-                            .padding(.horizontal)
-                    }
-
-                    // Document progress (JUPAS / personal statement / EJU, not essay AI)
-                    DocumentProgressCard(stats: documentStats)
-                        .padding(.horizontal)
-
-                    // Quick stats grid
-                    QuickStatsGrid(colleges: colleges)
-                        .padding(.horizontal)
                 }
                 .padding(.vertical)
             }

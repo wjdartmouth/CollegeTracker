@@ -66,7 +66,7 @@ struct DashboardView: View {
                     if !overdueDeadlines.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
                             SectionHeader(title: L10n.tr("Overdue"), icon: "exclamationmark.circle.fill")
-                            DeadlineTimelineView(items: overdueDeadlines)
+                            DeadlineTimelineView(items: overdueDeadlines, linksToDeadlines: true)
                         }
                         .padding(.horizontal)
                     }
@@ -75,7 +75,7 @@ struct DashboardView: View {
                     if !upcomingDeadlines.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
                             SectionHeader(title: L10n.tr("Upcoming Deadlines"), icon: "calendar.badge.clock")
-                            DeadlineTimelineView(items: upcomingDeadlines)
+                            DeadlineTimelineView(items: upcomingDeadlines, linksToDeadlines: true)
                         }
                         .padding(.horizontal)
                     } else if !colleges.isEmpty && overdueDeadlines.isEmpty {
@@ -186,13 +186,27 @@ struct StatCard: View {
 
 struct DeadlineTimelineView: View {
     let items: [(deadline: Deadline, college: College)]
+    var linksToDeadlines = false
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
                 ForEach(items, id: \.deadline.id) { item in
-                    DeadlineCard(deadline: item.deadline, collegeName: item.college.name,
-                                 collegeColor: Color(hex: item.college.logoColorHex))
+                    if linksToDeadlines {
+                        NavigationLink(destination: CollegeDetailView(
+                            college: item.college,
+                            initialSection: .deadlines,
+                            highlightedDeadlineID: item.deadline.id
+                        )) {
+                            DeadlineCard(deadline: item.deadline, collegeName: item.college.name,
+                                         collegeColor: Color(hex: item.college.logoColorHex))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityHint(L10n.tr("Opens this school's deadlines"))
+                    } else {
+                        DeadlineCard(deadline: item.deadline, collegeName: item.college.name,
+                                     collegeColor: Color(hex: item.college.logoColorHex))
+                    }
                 }
             }
             .padding(.horizontal)
@@ -339,19 +353,26 @@ struct EmptyStateView: View {
 
 struct NotificationDeniedBanner: View {
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "bell.slash.fill")
-                .foregroundStyle(.orange)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(L10n.tr("Deadline reminders are off"))
-                    .font(.subheadline.bold())
-                Text(L10n.tr("Enable notifications in Settings to get JUPAS, EJU, and other deadline alerts at 9:00. These are regular local notifications, not Critical Alerts."))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        Button {
+            StudentTabRouter.shared.select(.settings)
+        } label: {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "bell.slash.fill")
+                    .foregroundStyle(.orange)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(L10n.tr("Deadline reminders are off"))
+                        .font(.subheadline.bold())
+                    Text(L10n.tr("Turn on deadline reminders in the Settings tab. If iOS has already denied permission, use iOS Settings. These are regular local notifications, not Critical Alerts."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
+                }
+                Spacer(minLength: 0)
             }
-            Spacer(minLength: 0)
+            .padding(14)
+            .cardStyle()
         }
-        .padding(14)
-        .cardStyle()
+        .buttonStyle(.plain)
+        .accessibilityHint(L10n.tr("Opens Settings"))
     }
 }

@@ -4,6 +4,8 @@ import SwiftData
 
 struct CollegeListView: View {
     let profile: UserProfile
+    @ObservedObject private var notificationRouter = NotificationRouter.shared
+    @State private var path = NavigationPath()
     @State private var showAddCollege = false
     @State private var searchText = ""
     @State private var selectedStatus: ApplicationStatus? = nil
@@ -29,7 +31,7 @@ struct CollegeListView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             VStack(spacing: 0) {
                 // Status filter chips
                 StatusFilterBar(selected: $selectedStatus)
@@ -53,7 +55,7 @@ struct CollegeListView: View {
                             }
                             .buttonStyle(.plain)
                         } else {
-                            NavigationLink(destination: CollegeDetailView(college: college)) {
+                            NavigationLink(value: CollegeRoute(collegeID: college.id, section: .pathways, deadlineID: nil)) {
                                 CollegeRowView(college: college)
                             }
                             .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
@@ -65,6 +67,17 @@ struct CollegeListView: View {
                 }
                 .listStyle(.plain)
                 .searchable(text: $searchText, prompt: L10n.tr("Search colleges"))
+                .overlay {
+                    if filteredColleges.isEmpty {
+                        EmptyStateView(
+                            icon: "building.columns",
+                            title: profile.colleges.isEmpty ? L10n.tr("No colleges yet") : L10n.tr("No matching colleges"),
+                            subtitle: profile.colleges.isEmpty
+                                ? L10n.tr("Tap + to add your first school")
+                                : L10n.tr("Try another name or status")
+                        )
+                    }
+                }
             }
             .navigationTitle(L10n.format("Colleges (%lld)", profile.colleges.count))
             .toolbar {
@@ -98,7 +111,47 @@ struct CollegeListView: View {
             .sheet(isPresented: $showCompare) {
                 CollegeCompareView(colleges: Array(compareSelection))
             }
+            .navigationDestination(for: CollegeRoute.self) { route in
+                if let college = profile.colleges.first(where: { $0.id == route.collegeID }) {
+                    CollegeDetailView(
+                        college: college,
+                        initialSection: route.section,
+                        highlightedDeadlineID: route.deadlineID
+                    )
+                } else {
+                    EmptyStateView(
+                        icon: "building.columns",
+                        title: L10n.tr("No colleges yet"),
+                        subtitle: L10n.tr("That school is no longer on this iPhone.")
+                    )
+                }
+            }
         }
+        .onAppear { openPendingDeadlineLink() }
+        .onChange(of: notificationRouter.link) { _, _ in
+            openPendingDeadlineLink()
+        }
+    }
+
+    private func openPendingDeadlineLink() {
+        guard let link = notificationRouter.link else { return }
+        notificationRouter.clear()
+        guard let collegeID = collegeID(for: link) else { return }
+        isCompareMode = false
+        compareSelection.removeAll()
+        searchText = ""
+        selectedStatus = nil
+        path = NavigationPath()
+        path.append(CollegeRoute(collegeID: collegeID, section: .deadlines, deadlineID: link.deadlineID))
+    }
+
+    private func collegeID(for link: DeadlineNotificationLink) -> UUID? {
+        if let collegeID = link.collegeID, profile.colleges.contains(where: { $0.id == collegeID }) {
+            return collegeID
+        }
+        return profile.colleges.first { college in
+            college.deadlines.contains { $0.id == link.deadlineID }
+        }?.id
     }
 
     @Environment(\.modelContext) private var context
@@ -380,7 +433,7 @@ struct AddCollegeView: View {
             let deadline = Deadline(type: deadlineType, date: deadlineDate)
             deadline.college = college
             college.deadlines.append(deadline)
-            NotificationService.shared.scheduleReminders(for: deadline, collegeName: college.name)
+            NotificationService.shared.scheduleReminders(for: deadline, collegeName: college.name, collegeID: college.id)
         }
 
         profile.colleges.append(college)
